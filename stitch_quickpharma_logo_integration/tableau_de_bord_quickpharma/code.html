@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f8f9ff;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'error': '#ba1a1a', 'error-container': '#ffdad6', 'surface-variant': '#d3e4fe', 'tertiary-container': '#4f576d', 'outline-variant': '#c2c6d3', 'surface': '#f8f9ff', 'on-primary-fixed': '#001c3b', 'primary-fixed': '#d5e3ff', 'inverse-primary': '#a6c8ff', 'inverse-surface': '#213145', 'tertiary': '#384055', 'surface-bright': '#f8f9ff', 'surface-container-low': '#eff4ff', 'primary-fixed-dim': '#a6c8ff', 'on-surface-variant': '#424751', 'on-tertiary-container': '#c6cde7', 'surface-dim': '#cbdbf5', 'surface-container-highest': '#d3e4fe', 'on-background': '#0b1c30', 'on-secondary-fixed-variant': '#00504a', 'on-tertiary-fixed': '#131b2e', 'on-secondary-container': '#006f67', 'secondary-fixed': '#75f7ea', 'on-tertiary': '#ffffff', 'background': '#f8f9ff', 'secondary': '#006a63', 'secondary-fixed-dim': '#55dacd', 'surface-tint': '#195faa', 'tertiary-fixed': '#dae2fd', 'surface-container': '#e5eeff', 'surface-container-high': '#dce9ff', 'outline': '#727782', 'on-primary-fixed-variant': '#004787', 'on-primary-container': '#b4d0ff', 'on-secondary-fixed': '#00201d', 'on-error-container': '#93000a', 'secondary-container': '#72f4e7', 'on-tertiary-fixed-variant': '#3f465c', 'primary': '#00417c', 'on-surface': '#0b1c30', 'tertiary-fixed-dim': '#bec6e0', 'on-error': '#ffffff', 'on-secondary': '#ffffff', 'surface-container-lowest': '#ffffff', 'on-primary': '#ffffff', 'inverse-on-surface': '#eaf1ff', 'primary-container': '#0a58a3' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'margin': '1rem', 'space-xl': '1.5rem', 'space-md': '0.75rem', 'space-lg': '1rem', 'space-xs': '0.25rem', 'gutter': '1rem', 'space-sm': '0.5rem' }, fontFamily: { 'body-md': ['Inter'], 'body-lg': ['Inter'], 'label-lg': ['Inter'], 'body-sm': ['Inter'], 'headline-md': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'label-sm': ['Inter'], 'headline-lg': ['Plus Jakarta Sans'], 'data-metric': ['Plus Jakarta Sans'], 'label-md': ['Inter'], 'data-tabular': ['Inter'], 'display-lg': ['Plus Jakarta Sans'] }, fontSize: { 'body-md': ['14px', {lineHeight: '20px', fontWeight: '400'}], 'body-lg': ['16px', {lineHeight: '24px', fontWeight: '400'}], 'label-lg': ['14px', {lineHeight: '20px', fontWeight: '600'}], 'body-sm': ['12px', {lineHeight: '16px', fontWeight: '400'}], 'headline-md': ['20px', {lineHeight: '28px', fontWeight: '600'}], 'headline-sm': ['18px', {lineHeight: '24px', fontWeight: '600'}], 'label-sm': ['11px', {lineHeight: '14px', fontWeight: '600'}], 'headline-lg': ['24px', {lineHeight: '32px', fontWeight: '700'}], 'data-metric': ['28px', {lineHeight: '34px', fontWeight: '700'}], 'label-md': ['12px', {lineHeight: '16px', fontWeight: '600'}], 'data-tabular': ['15px', {lineHeight: '20px', fontWeight: '600'}], 'display-lg': ['32px', {lineHeight: '40px', fontWeight: '700'}] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-[0_2px_8px_rgba(10,88,163,0.25)]"><span class="material-symbols-outlined text-[22px]">local_pharmacy</span></div><span class="hidden sm:inline font-headline-sm text-headline-sm text-primary tracking-tight">QuickPharma</span></div><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors max-w-[190px] min-h-[44px]"><span class="w-2 h-2 rounded-full bg-secondary shrink-0 animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface truncate text-left">Pharmacie Centrale</span><span class="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">arrow_drop_down</span></button><div class="flex items-center gap-1.5"><button aria-label="Recherche globale" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[22px]">search</span></button><button aria-label="Scanner code-barres" class="w-11 h-11 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-colors"><span class="material-symbols-outlined text-[22px]">barcode_scanner</span></button><div class="relative pl-1 shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1U3JLFOScTpx6K3aG5qzNrkfIqsJ6eyveC9PY1MrOYjpOMjbr6k6kd797ZhYinTdpmIl4OTYqNcVpG5OqGg27OVqCUJOC9I6X7tQ9Q--D56lxoV5pIVrwAyKjMMlrN3aoF1R99c35o26KoxX1opef9wRUfze7BSAXP6XJUw-SBw8iOYJ8CPTz-Lot_MOVzng2AzrKdLPPSB8Hu3VJyY6Y6dmcAZ1xzEBD5o1Xba5PJJO7zdf7luZABxZZsjPbXoVtUkiIW8McuZ9w"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-secondary ring-2 ring-surface"></span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 px-margin bg-surface"><div class="flex flex-col w-full space-y-space-md">
+<!-- Salutation & Quick Status Pill -->
+<div class="flex items-center justify-between pt-1">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Bonjour Dr. Laurent</p>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Tableau de Bord</h1>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm font-semibold">Officine Ouverte</span>
+</div>
+</div>
+<!-- Horizontal Time Filter -->
+<div class="flex items-center gap-space-xs overflow-x-auto py-1 -mx-margin px-margin scrollbar-none">
+<button class="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm whitespace-nowrap active:scale-95 transition-transform flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+      Aujourd'hui
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap active:scale-95 transition-colors">
+      Cette semaine
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap active:scale-95 transition-colors">
+      Ce mois
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+      Personnalisé
+    </button>
+</div>
+<!-- Critical Banner -->
+<div class="rounded-xl bg-error-container/60 p-space-md shadow-sm relative overflow-hidden flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-error text-on-error flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-error">Alerte Prioritaire</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hier</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-background mt-0.5 leading-snug">
+<span class="font-semibold">2 lots d'Amoxicilline 500mg</span> ont dépassé leur date limite de péremption.
+      </p>
+<div class="mt-2 flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg bg-error text-on-error font-label-sm text-label-sm shadow-sm active:scale-95 transition-transform flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+          Traiter le retrait immédiat
+        </button>
+<button class="px-2.5 py-1.5 rounded-lg text-on-surface-variant font-label-sm text-label-sm hover:bg-error-container/80 transition-colors">
+          Ignorer
+        </button>
+</div>
+</div>
+</div>
+<!-- Quick Action Grid (4 Ergonomic Buttons) -->
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Actions Rapides</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-0.5 font-semibold cursor-pointer">
+        Raccourcis <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Action 1: New Sale (Featured Hero Action) -->
+<button class="relative col-span-1 flex flex-col justify-between p-3.5 rounded-xl bg-primary text-on-primary shadow-md active:scale-98 transition-transform overflow-hidden text-left h-28 group">
+<div class="absolute -right-2 -bottom-2 w-16 h-16 rounded-full bg-white/10 blur-sm pointer-events-none group-hover:scale-125 transition-transform"></div>
+<div class="flex items-center justify-between w-full">
+<div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[22px]">point_of_sale</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-[10px] uppercase font-bold">F1</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm block font-bold leading-tight">Nouvelle Vente</span>
+<span class="font-label-sm text-label-sm text-primary-fixed-dim">Comptoir &amp; Ordo</span>
+</div>
+</button>
+<!-- Action 2: Scan Product -->
+<button class="col-span-1 flex flex-col justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm active:scale-98 transition-transform text-left h-28 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full">
+<div class="w-9 h-9 rounded-lg bg-secondary-container/40 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">barcode_scanner</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rapide</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface block font-bold leading-tight">Scanner Produit</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Recherche CIP / Datamatrix</span>
+</div>
+</button>
+<!-- Action 3: Stock Entry -->
+<button class="col-span-1 flex flex-col justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm active:scale-98 transition-transform text-left h-28 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full">
+<div class="w-9 h-9 rounded-lg bg-primary-fixed text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">inventory</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">add_circle</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface block font-bold leading-tight">Entrée Stock</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Réception grossiste</span>
+</div>
+</button>
+<!-- Action 4: New Customer -->
+<button class="col-span-1 flex flex-col justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm active:scale-98 transition-transform text-left h-28 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">person_add</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">badge</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface block font-bold leading-tight">Nouveau Patient</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Création dossier Vitale</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Key Metrics (KPIs) -->
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Activité du Jour</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mise à jour il y a 3 min</span>
+</div>
+<!-- Metric 1: Revenue -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Chiffre d'Affaires Réalisé</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-data-metric text-data-metric text-on-surface tracking-tight">2 840,50 €</span>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+              +12.4%
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Comparé à hier à la même heure (2 527,10 €)</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">euro</span>
+</div>
+</div>
+</div>
+<!-- Sub-metrics Grid (2 Columns) -->
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Orders Count -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-secondary"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Volume Ventes</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">receipt_long</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-on-surface">84</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Ordonnances &amp; ventes comptoir</p>
+</div>
+<!-- Stock Value -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-surface-tint"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Valeur Stock</span>
+<span class="material-symbols-outlined text-primary text-[18px]">warehouse</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-on-surface">48 920 €</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">1 420 références actives</p>
+</div>
+</div>
+<!-- Critical Alerts Breakdown Card -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[20px]">notifications_active</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Alertes Stocks &amp; Lots</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">18 à traiter</span>
+</div>
+<div class="grid grid-cols-3 gap-2 text-center">
+<!-- Ruptures -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col items-center">
+<span class="font-headline-md text-headline-md text-error font-bold">4</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ruptures</span>
+<span class="w-1.5 h-1.5 rounded-full bg-error mt-1.5"></span>
+</div>
+<!-- Soon Expired -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col items-center">
+<span class="font-headline-md text-headline-md text-tertiary-container font-bold">12</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">&lt; 30 jours</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline mt-1.5"></span>
+</div>
+<!-- Critical Expired -->
+<div class="p-2.5 rounded-lg bg-error-container/30 flex flex-col items-center">
+<span class="font-headline-md text-headline-md text-error font-bold">2</span>
+<span class="font-label-sm text-label-sm text-error mt-0.5">Expirés</span>
+<span class="w-1.5 h-1.5 rounded-full bg-error mt-1.5 animate-ping"></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Compact Activity Chart Section -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm space-y-space-sm">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Flux de Fréquentation</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pics enregistrés à 11h00 et 17h00</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span> Comptoir
+        </span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span> Ordonnance
+        </span>
+</div>
+</div>
+<!-- Inline SVG Graphic Visualization -->
+<div class="w-full pt-2">
+<svg class="w-full h-32 overflow-visible" preserveaspectratio="none" viewbox="0 0 320 120">
+<defs>
+<lineargradient id="primaryGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#00417c" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#00417c" stop-opacity="0.0"></stop>
+</lineargradient>
+<lineargradient id="tealGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#006a63" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#006a63" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Horizontal Guide Lines -->
+<line stroke="#eff4ff" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="20" y2="20"></line>
+<line stroke="#eff4ff" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="60" y2="60"></line>
+<line stroke="#eff4ff" stroke-width="1" x1="0" x2="320" y1="100" y2="100"></line>
+<!-- Area Fill (Cobalt Curve) -->
+<path d="M0,100 Q40,95 70,65 T130,22 T190,85 T250,15 T320,70 L320,100 L0,100 Z" fill="url(#primaryGradient)"></path>
+<!-- Area Fill (Teal Curve) -->
+<path d="M0,100 Q40,98 70,80 T130,45 T190,92 T250,38 T320,80 L320,100 L0,100 Z" fill="url(#tealGradient)"></path>
+<!-- Line 1: Primary Stream -->
+<path d="M0,100 Q40,95 70,65 T130,22 T190,85 T250,15 T320,70" fill="none" stroke="#00417c" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Line 2: Secondary Stream -->
+<path d="M0,100 Q40,98 70,80 T130,45 T190,92 T250,38 T320,80" fill="none" stroke="#006a63" stroke-dasharray="4 3" stroke-linecap="round" stroke-width="2"></path>
+<!-- Peak Markers: 11h Peak -->
+<circle cx="130" cy="22" fill="#00417c" r="4.5"></circle>
+<circle cx="130" cy="22" fill="#ffffff" r="2"></circle>
+<!-- Peak Markers: 17h Peak -->
+<circle cx="250" cy="15" fill="#00417c" r="4.5"></circle>
+<circle cx="250" cy="15" fill="#ffffff" r="2"></circle>
+</svg>
+<!-- Timeline Hour Indicators -->
+<div class="flex justify-between font-label-sm text-label-sm text-outline mt-1 px-1">
+<span>08h</span>
+<span>10h</span>
+<span class="font-bold text-primary">11h (Pic 1)</span>
+<span>14h</span>
+<span class="font-bold text-primary">17h (Pic 2)</span>
+<span>19h30</span>
+</div>
+</div>
+</div>
+<!-- Recent Transactions Section -->
+<div class="space-y-space-sm pb-2">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Dernières Ventes</h2>
+<a class="font-label-md text-label-md text-primary hover:underline flex items-center gap-0.5" href="#">
+        Voir tout (84) <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- Transaction Items Stack -->
+<div class="space-y-2">
+<!-- Item 1 -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Mme Sophie Moreau</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary-container/30 text-on-secondary-container font-label-sm text-[10px] font-bold">ALD</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span>15:42</span>
+<span>•</span>
+<span class="inline-flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">health_and_safety</span> Tiers-Payant 100%
+              </span>
+</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-data-tabular text-data-tabular text-on-surface block">64,20 €</span>
+<span class="inline-flex items-center gap-0.5 font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Validé
+          </span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Vente Comptoir #4092</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">Conseil</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span>15:35</span>
+<span>•</span>
+<span class="inline-flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">contactless</span> CB Sans contact
+              </span>
+</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-data-tabular text-data-tabular text-on-surface block">22,50 €</span>
+<span class="inline-flex items-center gap-0.5 font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Validé
+          </span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">prescriptions</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface truncate">M. Jean-Luc Bernard</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span>15:18</span>
+<span>•</span>
+<span class="inline-flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">credit_card</span> Mixte CB + Partiel
+              </span>
+</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-data-tabular text-data-tabular text-on-surface block">118,90 €</span>
+<span class="inline-flex items-center gap-0.5 font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Télétransmis
+          </span>
+</div>
+</div>
+</div>
+</div>
+</div></main><div class="fixed bottom-20 right-margin z-40"><button aria-label="Action rapide ordonnance ou dispensation" class="w-14 h-14 rounded-full bg-secondary hover:bg-secondary/90 text-on-secondary shadow-[0_6px_20px_rgba(28,181,169,0.35)] flex items-center justify-center transition-transform active:scale-95"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(11,28,48,0.05)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-colors text-primary font-semibold" data-path="accueil" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Accueil</span></a><a class="relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="stock" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm">Stock</span><span class="absolute top-1 right-3 w-2 h-2 rounded-full bg-error"></span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="ventes" href="#"><span class="material-symbols-outlined text-[22px]">point_of_sale</span><span class="font-label-sm text-label-sm">Ventes</span></a><a class="relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="notifications" href="#"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="font-label-sm text-label-sm">Notifs</span><span class="absolute top-1 right-2 px-1 rounded-full bg-error text-on-error font-label-sm text-[10px] leading-3 min-w-[15px] text-center">3</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="plus" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-sm text-label-sm">Plus</span></a></div></nav></body></html>

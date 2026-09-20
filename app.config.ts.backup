@@ -1,0 +1,46 @@
+import type { ConfigContext, ExpoConfig } from 'expo/config';
+
+/**
+ * Environment-specific configuration on top of app.json.
+ *
+ * APP_ENV selects the variant (development | staging | production). Only
+ * EXPO_PUBLIC_* values are bundled into the app: never put a backend or
+ * Google secret in them.
+ */
+type AppEnv = 'development' | 'staging' | 'production';
+
+const APP_ENV: AppEnv = ((): AppEnv => {
+  const value = process.env.APP_ENV;
+  return value === 'staging' || value === 'production' ? value : 'development';
+})();
+
+const VARIANT_SUFFIX: Record<AppEnv, string> = {
+  development: '.dev',
+  staging: '.staging',
+  production: '',
+};
+
+const VARIANT_NAME: Record<AppEnv, string> = {
+  development: 'QuickPharma (Dev)',
+  staging: 'QuickPharma (Staging)',
+  production: 'QuickPharma',
+};
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const baseId = 'com.quickpharma.mobile';
+  const appId = `${baseId}${VARIANT_SUFFIX[APP_ENV]}`;
+
+  return {
+    ...config,
+    name: VARIANT_NAME[APP_ENV],
+    slug: config.slug ?? 'quickpharma-mobile',
+    ios: { ...config.ios, bundleIdentifier: appId },
+    // Cleartext HTTP (local backend) is only allowed by debug builds; release
+    // builds require the HTTPS URL enforced in src/constants/config.ts.
+    android: { ...config.android, package: appId },
+    extra: {
+      ...config.extra,
+      appEnv: APP_ENV,
+    },
+  };
+};

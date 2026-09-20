@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "QuickPharma",
+    "slug": "quickpharma",
+    "scheme": "quickpharma",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f8f9ff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.quickpharma.mobile"
+    },
+    "android": {
+      "package": "com.quickpharma.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#f8f9ff",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#f8f9ff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

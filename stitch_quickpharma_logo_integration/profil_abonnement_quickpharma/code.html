@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f8f9ff;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'error': '#ba1a1a', 'error-container': '#ffdad6', 'surface-variant': '#d3e4fe', 'tertiary-container': '#4f576d', 'outline-variant': '#c2c6d3', 'surface': '#f8f9ff', 'on-primary-fixed': '#001c3b', 'primary-fixed': '#d5e3ff', 'inverse-primary': '#a6c8ff', 'inverse-surface': '#213145', 'tertiary': '#384055', 'surface-bright': '#f8f9ff', 'surface-container-low': '#eff4ff', 'primary-fixed-dim': '#a6c8ff', 'on-surface-variant': '#424751', 'on-tertiary-container': '#c6cde7', 'surface-dim': '#cbdbf5', 'surface-container-highest': '#d3e4fe', 'on-background': '#0b1c30', 'on-secondary-fixed-variant': '#00504a', 'on-tertiary-fixed': '#131b2e', 'on-secondary-container': '#006f67', 'secondary-fixed': '#75f7ea', 'on-tertiary': '#ffffff', 'background': '#f8f9ff', 'secondary': '#006a63', 'secondary-fixed-dim': '#55dacd', 'surface-tint': '#195faa', 'tertiary-fixed': '#dae2fd', 'surface-container': '#e5eeff', 'surface-container-high': '#dce9ff', 'outline': '#727782', 'on-primary-fixed-variant': '#004787', 'on-primary-container': '#b4d0ff', 'on-secondary-fixed': '#00201d', 'on-error-container': '#93000a', 'secondary-container': '#72f4e7', 'on-tertiary-fixed-variant': '#3f465c', 'primary': '#00417c', 'on-surface': '#0b1c30', 'tertiary-fixed-dim': '#bec6e0', 'on-error': '#ffffff', 'on-secondary': '#ffffff', 'surface-container-lowest': '#ffffff', 'on-primary': '#ffffff', 'inverse-on-surface': '#eaf1ff', 'primary-container': '#0a58a3' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'margin': '1rem', 'space-xl': '1.5rem', 'space-md': '0.75rem', 'space-lg': '1rem', 'space-xs': '0.25rem', 'gutter': '1rem', 'space-sm': '0.5rem' }, fontFamily: { 'body-md': ['Inter'], 'body-lg': ['Inter'], 'label-lg': ['Inter'], 'body-sm': ['Inter'], 'headline-md': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'label-sm': ['Inter'], 'headline-lg': ['Plus Jakarta Sans'], 'data-metric': ['Plus Jakarta Sans'], 'label-md': ['Inter'], 'data-tabular': ['Inter'], 'display-lg': ['Plus Jakarta Sans'] }, fontSize: { 'body-md': ['14px', {lineHeight: '20px', fontWeight: '400'}], 'body-lg': ['16px', {lineHeight: '24px', fontWeight: '400'}], 'label-lg': ['14px', {lineHeight: '20px', fontWeight: '600'}], 'body-sm': ['12px', {lineHeight: '16px', fontWeight: '400'}], 'headline-md': ['20px', {lineHeight: '28px', fontWeight: '600'}], 'headline-sm': ['18px', {lineHeight: '24px', fontWeight: '600'}], 'label-sm': ['11px', {lineHeight: '14px', fontWeight: '600'}], 'headline-lg': ['24px', {lineHeight: '32px', fontWeight: '700'}], 'data-metric': ['28px', {lineHeight: '34px', fontWeight: '700'}], 'label-md': ['12px', {lineHeight: '16px', fontWeight: '600'}], 'data-tabular': ['15px', {lineHeight: '20px', fontWeight: '600'}], 'display-lg': ['32px', {lineHeight: '40px', fontWeight: '700'}] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-[0_2px_8px_rgba(10,88,163,0.25)]"><span class="material-symbols-outlined text-[22px]">local_pharmacy</span></div><span class="hidden sm:inline font-headline-sm text-headline-sm text-primary tracking-tight">QuickPharma</span></div><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors max-w-[190px] min-h-[44px]"><span class="w-2 h-2 rounded-full bg-secondary shrink-0 animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface truncate text-left">Pharmacie Centrale</span><span class="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">arrow_drop_down</span></button><div class="flex items-center gap-1.5"><button aria-label="Recherche globale" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[22px]">search</span></button><button aria-label="Scanner code-barres" class="w-11 h-11 rounded-full flex items-center justify-center text-secondary hover:bg-secondary-container/20 transition-colors"><span class="material-symbols-outlined text-[22px]">barcode_scanner</span></button><div class="relative pl-1 shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1U3JLFOScTpx6K3aG5qzNrkfIqsJ6eyveC9PY1MrOYjpOMjbr6k6kd797ZhYinTdpmIl4OTYqNcVpG5OqGg27OVqCUJOC9I6X7tQ9Q--D56lxoV5pIVrwAyKjMMlrN3aoF1R99c35o26KoxX1opef9wRUfze7BSAXP6XJUw-SBw8iOYJ8CPTz-Lot_MOVzng2AzrKdLPPSB8Hu3VJyY6Y6dmcAZ1xzEBD5o1Xba5PJJO7zdf7luZABxZZsjPbXoVtUkiIW8McuZ9w"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-secondary ring-2 ring-surface"></span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 px-margin bg-surface"><div class="flex flex-col w-full gap-space-lg pb-6">
+<!-- Notification Toast (Hidden by default) -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px] bg-inverse-surface text-inverse-on-surface px-space-lg py-2.5 rounded-full shadow-xl flex items-center gap-space-xs font-label-md text-label-md" id="statusToast">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">check_circle</span>
+<span id="toastMessage">Paramètre mis à jour</span>
+</div>
+<!-- Carte Profil Pharmacien Titulaire -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm relative overflow-hidden">
+<!-- Ambient decorative glow -->
+<div class="absolute -right-10 -top-10 w-36 h-36 rounded-full bg-surface-variant/40 blur-2xl pointer-events-none"></div>
+<div class="flex items-start gap-space-md relative z-10">
+<div class="relative shrink-0">
+<img class="w-16 h-16 rounded-xl object-cover shadow-sm ring-2 ring-surface-variant/30" data-alt="Close up portrait photograph of Dr Alexandre Martin, a confident 38-year-old French male pharmacist with kind eyes, wearing a clean modern white lab coat with subtle navy stitching. Soft medical office ambient lighting with blurred pharmacy shelves in background, high definition, authentic warm healthcare professional demeanor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuOWdPGGbTTmk6LgtvIsSiJsLV2Zk2PAJQuU-vPlHEG4D2tuxlgj5gBM2v4LPqRnxmb3fCMIyNi_EYtIFrYsd4V7qPRGZ9QOhr0ZRzjoyDWDBtXPwSsZ6FNdbHEulJrYxb-GbX5UpnL7ROy7UTFQwjNV2-umetornZbi4hyWbEXF-_SncPGIb4yvKx-fsUhrMynFKNrnltA_hhw5oBSkQ9eI1kRcVVXpPxDIPp0GsJg5LWxYyh45VI"/>
+<span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm" title="Vérifié Ordre National des Pharmaciens">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Dr. Alexandre Martin</h1>
+</div>
+<div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+          Pharmacien Titulaire / Manager
+        </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-outline shrink-0">mail</span>
+          a.martin@pharmacieduparc.fr
+        </p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-outline shrink-0">call</span>
+          +33 6 12 34 56 78
+        </p>
+</div>
+</div>
+<!-- Séparateur doux sans bordure -->
+<div class="h-px w-full bg-surface-container-high my-space-md"></div>
+<!-- Établissement Actif -->
+<div class="flex items-center justify-between bg-surface-container-low rounded-lg p-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]">storefront</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-sm text-label-sm text-on-surface-variant">Officine active</div>
+<div class="font-label-lg text-label-lg text-on-surface truncate">Pharmacie du Parc - Paris 11e</div>
+</div>
+</div>
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-highest hover:bg-surface-variant text-on-surface font-label-sm text-label-sm transition-colors shrink-0" onclick="showToast('Sélecteur d\'officine ouvert')">
+        Changer
+      </button>
+</div>
+</section>
+<!-- Section Abonnement & Licence QuickPharma Pro -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">workspace_premium</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Abonnement &amp; Licence</h2>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+        Officiel Android
+      </span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md relative overflow-hidden">
+<!-- Gradient header accent bar -->
+<div class="h-1.5 w-full bg-gradient-to-r from-primary via-primary-container to-secondary absolute top-0 left-0"></div>
+<!-- Plan Titre & Prix -->
+<div class="flex items-start justify-between gap-space-sm mt-1">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-on-surface">Plan Pro QuickPharma</span>
+<span class="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-secondary text-on-secondary font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-[12px]">check</span> Actif
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Facturé via Google Play Pass Santé Pro</p>
+</div>
+<div class="text-right shrink-0">
+<div class="font-data-metric text-data-metric text-primary leading-tight">59,00 €</div>
+<div class="font-label-sm text-label-sm text-outline">par mois TTC</div>
+</div>
+</div>
+<!-- Détails de facturation Google Play -->
+<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[17px]">shop</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm text-on-surface">Renouvellement automatique</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Prochaine échéance le 15 Mai 2025</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0">credit_card</span>
+</div>
+<!-- Matrice des permissions incluses -->
+<div class="flex flex-col gap-1.5">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Permissions accordées à votre rôle</span>
+<div class="grid grid-cols-2 gap-2 mt-1">
+<div class="flex items-center gap-1.5 p-2 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-secondary text-[16px]">inventory_2</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Stock &amp; Péremptions</span>
+</div>
+<div class="flex items-center gap-1.5 p-2 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-secondary text-[16px]">point_of_sale</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Dispensation &amp; Ventes</span>
+</div>
+<div class="flex items-center gap-1.5 p-2 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-secondary text-[16px]">group</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Gestion Employés (5)</span>
+</div>
+<div class="flex items-center gap-1.5 p-2 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-secondary text-[16px]">query_stats</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Rapports Financiers</span>
+</div>
+</div>
+</div>
+<!-- Actions Abonnement -->
+<div class="flex flex-col sm:flex-row items-stretch gap-space-sm pt-1">
+<button class="h-12 flex-1 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.98]" onclick="simulateGooglePlayAction()">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+          Gérer sur Google Play
+        </button>
+<button class="h-12 px-space-lg rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-lg text-label-lg flex items-center justify-center transition-colors" onclick="showToast('Grille des formules QuickPharma Enterprise')">
+          Changer de plan
+        </button>
+</div>
+</div>
+</section>
+<!-- Section Paramètres de l'Application -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-1.5 px-1">
+<span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Paramètres &amp; Préférences</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Sélecteur de Langue -->
+<div class="p-space-md flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">translate</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface">Langue de l'interface</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Vocabulaire officinal adapté</div>
+</div>
+</div>
+<div class="relative shrink-0">
+<select class="appearance-none bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md py-2 pl-3 pr-8 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="langSelect" onchange="updateLanguage(this.value)">
+<option selected="" value="fr">Français 🇫🇷</option>
+<option value="en">English 🇬🇧</option>
+<option value="ar">العربية (RTL) 🇸🇦</option>
+<option value="es">Español 🇪🇸</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="h-px w-full bg-surface-container"></div>
+<!-- Bascule Thème Clair / Sombre -->
+<div class="p-space-md flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]" id="themeIcon">light_mode</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface">Apparence visuelle</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant" id="themeStatusText">Thème clair actif (Recommandé comptoir)</div>
+</div>
+</div>
+<button aria-label="Basculer le thème" class="relative w-12 h-7 rounded-full bg-surface-container-highest p-0.5 transition-colors focus:outline-none" id="themeToggleBtn" onclick="toggleAppTheme()">
+<span class="block w-6 h-6 rounded-full bg-surface-container-lowest shadow-sm transition-transform translate-x-0" id="themeToggleThumb"></span>
+</button>
+</div>
+<div class="h-px w-full bg-surface-container"></div>
+<!-- Sécurité : Verrouillage Biométrique -->
+<div class="p-space-md flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">fingerprint</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface">Biométrie (FaceID / Empreinte)</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Requis à l'ouverture de l'application</div>
+</div>
+</div>
+<button aria-label="Activer sécurité biométrique" class="relative w-12 h-7 rounded-full bg-secondary p-0.5 transition-colors focus:outline-none" id="biometricToggle" onclick="toggleBiometrics()">
+<span class="block w-6 h-6 rounded-full bg-surface-container-lowest shadow-sm transition-transform translate-x-5" id="biometricThumb"></span>
+</button>
+</div>
+<div class="h-px w-full bg-surface-container"></div>
+<!-- Sécurité : Mot de passe -->
+<button class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-low transition-colors text-left w-full" onclick="showToast('Écran de changement de mot de passe sécurisé')">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">lock_reset</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface">Changer de mot de passe</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Dernière mise à jour il y a 45 jours</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Section Assistance & Conformité Santé -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-1.5 px-1">
+<span class="material-symbols-outlined text-primary text-[20px]">help_center</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Assistance &amp; Conformité</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<!-- Support Client Dédié -->
+<button class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-low transition-colors text-left w-full" onclick="showToast('Connexion à la ligne d\'urgence officinale...')">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/50 flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface flex items-center gap-1.5">
+              Support Pharmacien Prioritaire
+              <span class="px-1.5 py-0.2 rounded bg-secondary-container text-on-secondary-container font-label-sm text-[10px]">24/7</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Délai de réponse garanti &lt; 5 minutes</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">call</span>
+</button>
+<div class="h-px w-full bg-surface-container"></div>
+<!-- CGU & Données Santé RGPD -->
+<button class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-low transition-colors text-left w-full" onclick="showToast('Affichage du Registre RGPD &amp; Données HDS')">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface">CGU &amp; Données Santé (HDS / RGPD)</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Conformité ANSM &amp; Serveurs Certifiés HDS France</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Section Déconnexion Sécurisée -->
+<section class="mt-space-sm">
+<div class="bg-error-container/30 rounded-xl p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[20px]">logout</span>
+<span class="font-label-lg text-label-lg text-on-error-container">Session de service</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-error-container">ID Poste: T-01-PARC</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        La déconnexion verrouille l'accès aux ordonnances et aux dossiers patients conformément au secret médical.
+      </p>
+<!-- Bouton Déconnexion avec Confirmation Interactive -->
+<div id="logoutDefaultContainer">
+<button class="w-full h-12 rounded-xl bg-error-container hover:bg-error-container/80 text-on-error-container font-label-lg text-label-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]" id="logoutInitBtn" onclick="promptLogoutConfirm()">
+<span class="material-symbols-outlined text-[18px]">power_settings_new</span>
+          Déconnexion sécurisée
+        </button>
+</div>
+<div class="hidden flex flex-col sm:flex-row gap-2 transition-all" id="logoutConfirmContainer">
+<button class="flex-1 h-12 rounded-xl bg-error text-on-error font-label-lg text-label-lg flex items-center justify-center gap-1 shadow-sm active:scale-95" onclick="confirmLogout()">
+<span class="material-symbols-outlined text-[18px]">check</span>
+          Confirmer la sortie
+        </button>
+<button class="px-space-lg h-12 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg" onclick="cancelLogout()">
+          Annuler
+        </button>
+</div>
+</div>
+</section>
+<!-- Version & Statut Légal -->
+<div class="text-center py-2">
+<p class="font-label-sm text-label-sm text-outline">QuickPharma Dispensaire v3.14.2 (Build 4920)</p>
+<p class="font-body-sm text-[10px] text-outline mt-0.5">Certifié Logiciel d'Aide à la Dispensation (LAD)</p>
+</div>
+</div>
+<script>
+  let toastTimer = null;
+
+  function showToast(msg) {
+    const toast = document.getElementById('statusToast');
+    const label = document.getElementById('toastMessage');
+    if (!toast || !label) return;
+
+    label.textContent = msg;
+    toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+    toast.classList.add('opacity-100', 'translate-y-0');
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+    }, 2800);
+  }
+
+  function simulateGooglePlayAction() {
+    showToast("Redirection vers Google Play Store (Abonnements)...");
+  }
+
+  function updateLanguage(langCode) {
+    const names = {
+      'fr': 'Français (France)',
+      'en': 'English (UK)',
+      'ar': 'العربية (RTL activé)',
+      'es': 'Español'
+    };
+    showToast(`Langue appliquée : ${names[langCode] || langCode}`);
+  }
+
+  let isDarkMode = false;
+  function toggleAppTheme() {
+    isDarkMode = !isDarkMode;
+    const thumb = document.getElementById('themeToggleThumb');
+    const toggleBtn = document.getElementById('themeToggleBtn');
+    const statusText = document.getElementById('themeStatusText');
+    const icon = document.getElementById('themeIcon');
+
+    if (isDarkMode) {
+      thumb.classList.remove('translate-x-0');
+      thumb.classList.add('translate-x-5');
+      toggleBtn.classList.remove('bg-surface-container-highest');
+      toggleBtn.classList.add('bg-primary');
+      icon.textContent = 'dark_mode';
+      statusText.textContent = 'Thème sombre prévisualisé (Mode nuit)';
+      showToast('Mode nuit activé');
+    } else {
+      thumb.classList.remove('translate-x-5');
+      thumb.classList.add('translate-x-0');
+      toggleBtn.classList.remove('bg-primary');
+      toggleBtn.classList.add('bg-surface-container-highest');
+      icon.textContent = 'light_mode';
+      statusText.textContent = 'Thème clair actif (Recommandé comptoir)';
+      showToast('Mode clair réactivé');
+    }
+  }
+
+  let biometricsEnabled = true;
+  function toggleBiometrics() {
+    biometricsEnabled = !biometricsEnabled;
+    const thumb = document.getElementById('biometricThumb');
+    const btn = document.getElementById('biometricToggle');
+
+    if (biometricsEnabled) {
+      thumb.classList.remove('translate-x-0');
+      thumb.classList.add('translate-x-5');
+      btn.classList.remove('bg-surface-container-highest');
+      btn.classList.add('bg-secondary');
+      showToast('Déverrouillage FaceID / Empreinte activé');
+    } else {
+      thumb.classList.remove('translate-x-5');
+      thumb.classList.add('translate-x-0');
+      btn.classList.remove('bg-secondary');
+      btn.classList.add('bg-surface-container-highest');
+      showToast('Sécurité biométrique désactivée');
+    }
+  }
+
+  function promptLogoutConfirm() {
+    document.getElementById('logoutDefaultContainer').classList.add('hidden');
+    document.getElementById('logoutConfirmContainer').classList.remove('hidden');
+  }
+
+  function cancelLogout() {
+    document.getElementById('logoutConfirmContainer').classList.add('hidden');
+    document.getElementById('logoutDefaultContainer').classList.remove('hidden');
+  }
+
+  function confirmLogout() {
+    showToast('Fermeture de la session sécurisée...');
+    setTimeout(() => {
+      cancelLogout();
+    }, 1500);
+  }
+</script></main><div class="fixed bottom-20 right-margin z-40"><button aria-label="Action rapide ordonnance ou dispensation" class="w-14 h-14 rounded-full bg-secondary hover:bg-secondary/90 text-on-secondary shadow-[0_6px_20px_rgba(28,181,169,0.35)] flex items-center justify-center transition-transform active:scale-95"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(11,28,48,0.05)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="accueil" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Accueil</span></a><a class="relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="stock" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm">Stock</span><span class="absolute top-1 right-3 w-2 h-2 rounded-full bg-error"></span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="ventes" href="#"><span class="material-symbols-outlined text-[22px]">point_of_sale</span><span class="font-label-sm text-label-sm">Ventes</span></a><a class="relative flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-primary transition-colors" data-path="notifications" href="#"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="font-label-sm text-label-sm">Notifs</span><span class="absolute top-1 right-2 px-1 rounded-full bg-error text-on-error font-label-sm text-[10px] leading-3 min-w-[15px] text-center">3</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-colors text-primary font-semibold" data-path="plus" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-sm text-label-sm">Plus</span></a></div></nav></body></html>

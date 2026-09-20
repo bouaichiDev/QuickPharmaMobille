@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>QuickPharma - Créer un compte</title>
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#005596',
+              teal: '#1DB6B2',
+              'navy-hover': '#004377',
+              lightBg: '#EBF3FA',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-overrides">
+    /* Subtle touch active effects and custom input appearance */
+    input::placeholder {
+      color: #94A3B8;
+      font-size: 0.925rem;
+    }
+    .tap-highlight-transparent {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-brand-lightBg font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-start pb-10 tap-highlight-transparent selection:bg-teal-100 selection:text-teal-900">
+<!-- BEGIN: TopNavigation -->
+<header class="w-full max-w-md mx-auto px-4 pt-5 pb-2 flex items-center justify-between" data-purpose="top-navigation-bar">
+<a class="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-brand-navy transition-colors py-1.5 px-2.5 rounded-lg hover:bg-white/60" href="#">
+<svg class="w-4 h-4 mr-1.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+      Retour à la connexion
+    </a>
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-800 bg-teal-50 border border-teal-200/70 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+      Portail Officine
+    </span>
+</header>
+<!-- END: TopNavigation -->
+<!-- BEGIN: MainContent -->
+<main class="w-full max-w-md mx-auto px-4 flex-grow flex flex-col justify-center">
+<!-- Logo Section -->
+<div class="flex flex-col items-center justify-center my-3 text-center" data-purpose="brand-logo-container">
+<img alt="Logo QuickPharma" class="h-11 w-auto object-contain drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqYnQgsu-0HpROqQ2OAUKgTRCTzk_HurlZUnbLWfyafLvWtr3mduSHh3WWmWc5OfzyV2p1ZFddJa3evxdGZlr3k03mgjQCJ20eyzz0U1C8GdMcoPHQK-LpXLrrzWu6ShUOm6A0sj9MWyQQh91UmoxBtHfHG389Oah46VTWxxW4GCBs2si44lKjdz2tnUKnl72hcIXyasEbh1yvCI-ha1D2TXGdW3FN0sBaYAGkpal3cH_AEpdiWub-"/>
+</div>
+<!-- Register Card Container -->
+<div class="bg-white rounded-3xl shadow-[0_10px_35px_-5px_rgba(0,85,150,0.08),0_2px_8px_rgba(0,0,0,0.03)] border border-slate-100 p-6 sm:p-7 relative overflow-hidden" data-purpose="registration-card">
+<!-- Stepper Indicator -->
+<div class="mb-5 pb-3 border-b border-slate-100" data-purpose="progress-stepper">
+<div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+<span class="text-brand-navy font-semibold">Étape 1 sur 2</span>
+<span>Officine &amp; Responsable</span>
+</div>
+<div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-gradient-to-r from-brand-navy to-brand-teal h-1.5 rounded-full w-1/2 transition-all duration-500"></div>
+</div>
+</div>
+<!-- Header Titles -->
+<div class="mb-6 text-left">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 leading-snug">
+          Créez votre compte
+        </h1>
+<p class="text-xs sm:text-sm text-slate-500 mt-1 font-normal leading-relaxed">
+          Commencez à gérer votre entreprise en toute simplicité
+        </p>
+</div>
+<!-- Registration Form -->
+<form action="#" class="space-y-4" data-purpose="signup-form" method="POST" onsubmit="return false;">
+<!-- Field 1: Store/Pharmacy Name -->
+<div class="space-y-1.5 text-left">
+<label class="block text-xs font-bold text-slate-700" for="store_name">
+            Nom du magasin <span class="text-slate-400 font-normal">(ou officine)</span>
+</label>
+<div class="relative">
+<input class="w-full text-sm text-slate-800 bg-white rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 outline-none transition-all placeholder:text-slate-400" id="store_name" name="store_name" placeholder="Entrez le nom de votre magasin" required="" type="text"/>
+</div>
+</div>
+<!-- Field 2: Manager Full Name -->
+<div class="space-y-1.5 text-left">
+<label class="block text-xs font-bold text-slate-700" for="full_name">
+            Nom
+          </label>
+<input class="w-full text-sm text-slate-800 bg-white rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 outline-none transition-all placeholder:text-slate-400" id="full_name" name="full_name" placeholder="Entrez votre nom" required="" type="text"/>
+</div>
+<!-- Field 3: Professional Email -->
+<div class="space-y-1.5 text-left">
+<label class="block text-xs font-bold text-slate-700" for="email">
+            Email
+          </label>
+<input class="w-full text-sm text-slate-800 bg-white rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 outline-none transition-all placeholder:text-slate-400" id="email" name="email" placeholder="Entrez votre email" required="" type="email"/>
+</div>
+<!-- Field 4: Password with toggle & strength meter -->
+<div class="space-y-1.5 text-left">
+<div class="flex items-center justify-between">
+<label class="block text-xs font-bold text-slate-700" for="password">
+              Mot de passe
+            </label>
+<span class="text-[10px] font-medium text-teal-600">Robuste</span>
+</div>
+<div class="relative">
+<input class="w-full text-sm text-slate-800 bg-white rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 outline-none transition-all placeholder:text-slate-400 font-mono tracking-widest text-sm" id="password" name="password" placeholder="••••••••" required="" type="password" value="secretpassword"/>
+<button aria-label="Afficher ou masquer le mot de passe" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none" id="toggle-pwd" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Password strength bar indicator -->
+<div class="grid grid-cols-4 gap-1 pt-1">
+<div class="h-1 rounded-full bg-teal-500"></div>
+<div class="h-1 rounded-full bg-teal-500"></div>
+<div class="h-1 rounded-full bg-teal-500"></div>
+<div class="h-1 rounded-full bg-slate-200"></div>
+</div>
+</div>
+<!-- Field 5: Confirm Password -->
+<div class="space-y-1.5 text-left">
+<label class="block text-xs font-bold text-slate-700" for="password_confirmation">
+            Confirmer le mot de passe
+          </label>
+<input class="w-full text-sm text-slate-800 bg-white rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 outline-none transition-all placeholder:text-slate-400 font-mono tracking-widest text-sm" id="password_confirmation" name="password_confirmation" placeholder="••••••••" required="" type="password" value="secretpassword"/>
+</div>
+<!-- Cloudflare Turnstile Security Verification Component -->
+<div class="pt-1 text-left" data-purpose="captcha-verification">
+<span class="block text-[11px] font-semibold text-slate-600 mb-1.5">
+            security_verification
+          </span>
+<div class="w-full bg-[#fbfbfb] border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+<div class="flex items-center space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+<svg class="w-4 h-4 stroke-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-xs font-semibold text-slate-800 tracking-tight">Succès !</span>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<div class="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-slate-700 uppercase">
+<svg class="w-4 h-4 text-[#F38020]" fill="currentColor" viewbox="0 0 24 24">
+<path d="M18.8 8.8c-.4-2.8-2.8-4.8-5.7-4.8-2.6 0-4.8 1.6-5.5 3.9C7.2 8 6.7 8 6.2 8.1 3.9 8.6 2.2 10.6 2.2 13c0 2.8 2.2 5 5 5h11.5c2.4 0 4.3-1.9 4.3-4.3 0-2.2-1.7-4.1-3.9-4.3l-.3-.6z"></path>
+</svg>
+                CLOUDFLARE
+              </div>
+<div class="text-[9px] text-slate-400 space-x-1">
+<a class="hover:underline" href="#">Confidentialité</a>
+<span>•</span>
+<a class="hover:underline" href="#">Aide</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Terms & Conditions Checkbox -->
+<div class="pt-2 text-left">
+<label class="flex items-start gap-2.5 cursor-pointer">
+<input checked="" class="mt-0.5 rounded border-slate-300 text-brand-navy focus:ring-brand-navy/30 h-4 w-4" name="terms" required="" type="checkbox"/>
+<span class="text-[11px] leading-snug text-slate-500 font-normal">
+              J'accepte les <a class="text-brand-navy underline font-medium" href="#">Conditions Générales</a> et la politique de données santé (<span class="font-semibold text-slate-700">HDS / RGPD</span>).
+            </span>
+</label>
+</div>
+<!-- Primary CTA Submit Button -->
+<div class="pt-2">
+<button class="w-full bg-brand-navy hover:bg-brand-navy-hover active:scale-[0.985] text-white font-bold text-sm tracking-wide py-3.5 px-4 rounded-xl shadow-md shadow-brand-navy/20 transition-all flex items-center justify-center space-x-2" data-purpose="submit-register-btn" type="submit">
+<span>S’inscrire</span>
+<svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</form>
+<!-- Bottom Sign In Link -->
+<div class="mt-5 pt-4 text-center border-t border-slate-100">
+<p class="text-xs text-slate-500">
+          Vous avez déjà un compte ? 
+          <a class="font-bold text-brand-teal hover:text-teal-700 transition-colors ml-0.5" href="#">
+            Se connecter
+          </a>
+</p>
+</div>
+</div>
+<!-- Micro Footer / Compliance badge -->
+<footer class="mt-4 text-center text-[10px] text-slate-400 space-y-1 pb-4">
+<p class="flex items-center justify-center gap-1.5 font-medium">
+<svg class="w-3.5 h-3.5 text-teal-600 inline" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
+</svg>
+        Solution conforme Données de Santé Certifiée HDS
+      </p>
+<p>© 2025 QuickPharma SAS. Tous droits réservés.</p>
+</footer>
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: InteractiveScripts -->
+<script data-purpose="password-toggle">
+    // Simple script to toggle password visibility
+    const toggleBtn = document.getElementById('toggle-pwd');
+    const pwdInput = document.getElementById('password');
+
+    if (toggleBtn && pwdInput) {
+      toggleBtn.addEventListener('click', () => {
+        const isPassword = pwdInput.getAttribute('type') === 'password';
+        pwdInput.setAttribute('type', isPassword ? 'text' : 'password');
+        toggleBtn.classList.toggle('text-brand-navy', isPassword);
+      });
+    }
+  </script>
+<!-- END: InteractiveScripts -->
+</body></html>
