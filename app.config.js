@@ -4,15 +4,15 @@ module.exports = ({ config }) => {
 
   const androidPackage =
     process.env.EXPO_PUBLIC_ANDROID_PACKAGE ||
-    (isProduction ? 'com.quickpharma.mobile' : 'com.quickpharma.mobile.dev');
+    (isProduction ? 'com.quickpharma.mobile' : 'com.quickpharma.mobile');
 
   return {
     ...config,
 
-    name: isProduction ? 'QuickPharma' : 'QuickPharma (Dev)',
+    name: isProduction ? 'QuickPharma' : 'QuickPharma',
     slug: 'quickpharma',
     scheme: 'quickpharma',
-    version: '1.0.0',
+    version: '1.0.1',
     orientation: 'portrait',
 
     ios: {
