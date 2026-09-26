@@ -32,6 +32,15 @@ export const endpoints = {
     read: (uid: string) => `/alerts/${encodeURIComponent(uid)}/read`,
     readAll: '/alerts/read-all',
   },
+  billing: {
+    googlePlay: {
+      products: '/billing/google-play/products',
+      accountToken: '/billing/google-play/account-token',
+      verify: '/billing/google-play/verify',
+      restore: '/billing/google-play/restore',
+      status: '/billing/google-play/status',
+    },
+  },
   plans: {
     list: '/plans',
     detail: (id: number) => `/plans/${id}`,

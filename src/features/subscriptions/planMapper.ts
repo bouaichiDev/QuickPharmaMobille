@@ -45,7 +45,18 @@ function positiveOrNull(value: unknown): number | null {
   return parsed !== null && parsed > 0 ? parsed : null;
 }
 
-export function mapPlan(plan: ApiPlan, currentPlanId: number | null): PlanView {
+/**
+ * `storeProductId` is the Google Play product selling this plan, from
+ * GET /billing/google-play/products. When the caller passes the mapping (even
+ * an empty one) it alone decides whether the plan is purchasable; omitting it
+ * keeps the legacy `plans.provider_product_id` value, which belongs to another
+ * payment provider.
+ */
+export function mapPlan(
+  plan: ApiPlan,
+  currentPlanId: number | null,
+  storeProductId?: string | null,
+): PlanView {
   const price = toNumber(plan.price) ?? 0;
   return {
     id: plan.id,
@@ -57,15 +68,22 @@ export function mapPlan(plan: ApiPlan, currentPlanId: number | null): PlanView {
     maxUsers: positiveOrNull(plan.max_users),
     maxStores: positiveOrNull(plan.max_stores),
     features: normalizeFeatures(plan.features),
-    providerProductId: plan.provider_product_id || null,
+    providerProductId:
+      storeProductId !== undefined ? storeProductId : plan.provider_product_id || null,
     isCurrent: currentPlanId !== null && plan.id === currentPlanId,
   };
 }
 
 /** Active plans only (GET /plans also returns inactive ones), cheapest first. */
-export function mapPlans(plans: ApiPlan[], currentPlanId: number | null): PlanView[] {
+export function mapPlans(
+  plans: ApiPlan[],
+  currentPlanId: number | null,
+  storeProducts?: Map<number, { productId: string }>,
+): PlanView[] {
   return plans
     .filter((plan) => plan.active === true || plan.active === 1 || plan.id === currentPlanId)
-    .map((plan) => mapPlan(plan, currentPlanId))
+    .map((plan) =>
+      mapPlan(plan, currentPlanId, storeProducts ? (storeProducts.get(plan.id)?.productId ?? null) : undefined),
+    )
     .sort((a, b) => a.price - b.price || a.id - b.id);
 }

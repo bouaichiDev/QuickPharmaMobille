@@ -15,10 +15,8 @@ interface PlanCardProps {
   plan: PlanView;
   currency: string | null;
   canManage: boolean;
-  billingAvailable: boolean;
   onDetails: () => void;
-  onSubscribe: () => void;
-  subscribing?: boolean;
+  onOpenWeb: () => void;
 }
 
 const MAX_FEATURES = 6;
@@ -69,10 +67,8 @@ export function PlanCard({
   plan,
   currency,
   canManage,
-  billingAvailable,
   onDetails,
-  onSubscribe,
-  subscribing,
+  onOpenWeb,
 }: PlanCardProps) {
   const { t } = useTranslation();
 
@@ -111,14 +107,8 @@ export function PlanCard({
         {plan.isCurrent ? (
           <Button label={t('mobile.plans.currentPlan')} variant="tonal" disabled />
         ) : canManage && !plan.isFree ? (
-          // Only a manager holding subscription.manage ever sees a purchase button.
-          <Button
-            label={t('mobile.plans.subscribe')}
-            icon="shop"
-            onPress={onSubscribe}
-            loading={subscribing}
-            variant={billingAvailable ? 'primary' : 'tonal'}
-          />
+          // Payment happens on the web app only; the manager is sent there.
+          <Button label={t('mobile.plans.goToWeb')} icon="open-in-new" onPress={onOpenWeb} />
         ) : null}
         <Button label={t('mobile.plans.details')} variant="ghost" onPress={onDetails} trailingIcon="chevron-right" />
       </View>

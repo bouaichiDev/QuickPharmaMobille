@@ -20,7 +20,7 @@ import { spacing } from '@/theme';
 import { PlanComparisonTable } from '../components/PlanComparisonTable';
 import { PlanLimits, PlanPrice } from '../components/PlanCard';
 import { usePlans } from '../plansApi';
-import { useBillingAvailability, useSubscribe } from '../useBilling';
+import { openWebApp } from '../openWebApp';
 
 export function PlanDetailScreen() {
   const { t } = useTranslation();
@@ -28,8 +28,6 @@ export function PlanDetailScreen() {
   const currency = useCurrency();
   const canManage = useCanManageSubscription();
   const { plans, isLoading, isError, error, refetch } = usePlans();
-  const availability = useBillingAvailability();
-  const subscribe = useSubscribe();
 
   const plan = plans.find((item) => String(item.id) === id);
 
@@ -54,8 +52,6 @@ export function PlanDetailScreen() {
       </Screen>
     );
   }
-
-  const billingAvailable = availability.data?.available ?? false;
 
   return (
     <Screen edges={['bottom']}>
@@ -110,16 +106,8 @@ export function PlanDetailScreen() {
         <Button label={t('mobile.plans.currentPlan')} variant="tonal" disabled />
       ) : plan.isFree ? null : (
         <>
-          {!billingAvailable || subscribe.isError ? (
-            <InlineNotice tone="warning" message={t('mobile.plans.billingUnavailable')} />
-          ) : null}
-          <Button
-            label={t('mobile.plans.subscribe')}
-            icon="shop"
-            loading={subscribe.isPending}
-            onPress={() => subscribe.mutate(plan)}
-            variant={billingAvailable ? 'primary' : 'tonal'}
-          />
+          <InlineNotice tone="info" message={t('mobile.plans.webOnly')} />
+          <Button label={t('mobile.plans.goToWeb')} icon="open-in-new" onPress={() => void openWebApp()} />
         </>
       )}
     </Screen>

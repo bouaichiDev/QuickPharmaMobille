@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { useSessionStore } from '@/features/auth/sessionStore';
 import { billingService } from '@/services/billing/billingService';
@@ -13,13 +13,16 @@ export function useBillingAvailability() {
   });
 }
 
-/** Purchase flow; on success the access snapshot (plan, features, quotas) is refetched. */
+/**
+ * Purchase flow; on success the access snapshot (plan, features, quotas) is
+ * refetched, since the server changed the subscription while we were waiting.
+ */
 export function useSubscribe() {
   const client = useQueryClient();
   const storeId = useSessionStore((state) => state.session?.activeStore?.id ?? '');
   return useMutation({
     mutationFn: (plan: PlanView) => billingService.subscribe(plan, storeId),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['access'] }),
+    onSuccess: () => refreshAfterPurchase(client),
   });
 }
 
@@ -27,6 +30,11 @@ export function useRestorePurchases() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => billingService.restore(),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['access'] }),
+    onSuccess: () => refreshAfterPurchase(client),
   });
+}
+
+function refreshAfterPurchase(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: ['access'] });
+  void client.invalidateQueries({ queryKey: ['plans'] });
 }

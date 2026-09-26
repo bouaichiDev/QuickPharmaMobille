@@ -4,26 +4,24 @@ Ce document liste ce que l'application mobile **ne peut pas faire proprement** a
 
 Priorité : **P1** bloque une fonctionnalité prévue, **P2** dégrade l'expérience ou la sécurité, **P3** confort.
 
-## 1. Paiement Google Play (P1)
+## 1. Paiement Google Play — livré
 
-Aucune intégration Google Play n'existe côté Laravel (ni `purchaseToken`, ni Play Developer API, ni notifications RTDN). `POST /subscriptions/payment` est un placeholder et l'activation des plans payants passe par une validation manuelle SuperAdmin (`POST /subscription-billings/{id}/validate`).
+Le backend vérifie désormais les achats auprès de Google (`purchases.subscriptionsv2.get`), acquitte, reçoit les RTDN et resynchronise chaque jour. L'application achète via `expo-iap` et n'active jamais rien elle-même.
 
-L'écran des plans affiche donc les plans réels mais **l'achat est désactivé** (`BillingUnavailableError`, raison `BACKEND_VERIFICATION_MISSING`).
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/billing/google-play/products` | plans vendus sur Play, avec `product_id` et `base_plan_id` |
+| GET | `/billing/google-play/account-token` | `obfuscatedAccountId` à passer à Google Play |
+| POST | `/billing/google-play/verify` | vérifie un achat et active l'abonnement |
+| POST | `/billing/google-play/restore` | revérifie les achats du téléphone |
+| GET | `/billing/google-play/status` | état synchronisé du compte |
+| POST | `/billing/google-play/rtdn` | notifications temps réel (Pub/Sub, public signé) |
 
-Endpoints attendus (contrat déjà typé côté mobile dans `src/services/billing/types.ts`) :
+Contrat détaillé : `sassApi/docs/access-control/api-contract.md` §5 et `sassApi/docs/google-play-billing.md`.
 
-| Méthode | Route proposée | Rôle | Corps / réponse |
-|---|---|---|---|
-| POST | `/billing/google-play/verify` | `subscription.manage` | `{ store_id, plan_id, product_id, purchase_token, package_name }` → `{ subscription_id, plan_id, status, expires_at, auto_renewing }` |
-| POST | `/billing/google-play/restore` | `subscription.manage` | `{ store_id, purchases: [{ product_id, purchase_token }] }` → liste d'abonnements vérifiés |
-| GET | `/billing/google-play/status` | `subscription.view` | État synchronisé de l'abonnement Play du compte |
-| POST | `/billing/google-play/rtdn` | public, signé (Pub/Sub) | Real-time Developer Notifications (renouvellement, annulation, grâce, pause, remboursement) |
+Côté mobile : `src/services/billing/` (`googlePlayProvider` natif, `billingBackend` HTTP, `billingService` qui orchestre). Les ids produits viennent de `/billing/google-play/products` ; `plans.provider_product_id` appartient à un autre fournisseur de paiement et n'est plus lu.
 
-Prérequis backend :
-- `plans.provider_product_id` renseigné avec l'id produit / base plan Google Play (champ existant, vide aujourd'hui).
-- Statuts d'abonnement : la table `statuses` (`src = subscription`) ne contient que `active`, `pending`, `expired`, `cancelled`, `incomplete`. Il manque `grace_period`, `paused`, `refunded` (et éventuellement `purchased`).
-- Clé du compte de service Google **uniquement sur le serveur**.
-- Idempotence sur `purchase_token` (un même jeton ne doit jamais activer deux abonnements).
+Restent à faire hors code : produits et base plans activés dans Play Console, compte de service autorisé, topic Pub/Sub, lignes `store_products` côté serveur, et un build de développement (le module natif n'existe pas dans Expo Go).
 
 ## 2. Tableau de bord (P2)
 

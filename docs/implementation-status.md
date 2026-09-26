@@ -39,7 +39,7 @@ Date : 2026-09-16. Légende : ✅ fait et vérifié · 🟡 fait, vérifié part
 | 15 | Plan actif | ✅ | « Free », échéance réelle |
 | 16 | Liste dynamique des plans | ✅ | 4 plans réels, plan courant signalé, achat désactivé avec explication |
 | 17 | Détail / comparaison des plans | 🟡 | écran compilé, non ouvert pendant le test |
-| 18 | Préparation Google Play Billing | ⛔ | contrats, service, 8 statuts, restaurer, gérer sur Play ; achat désactivé : pas d'endpoint de vérification |
+| 18 | Google Play Billing | ✅ | achat, restauration et gestion sur Play via `expo-iap` ; vérification serveur (`/billing/google-play/*`), 8 statuts ; nécessite un build de développement et la configuration Play Console |
 | 19 | Permissions / fonctionnalités / quotas centralisés | ✅ | `usePermission`, `usePlanFeature`, `useQuota`, `useSubscription`, `useCurrentStore`, `PermissionGate` ; 403/409 traités |
 | 20 | États loading / empty / offline / locked / error | ✅ | skeletons, EmptyState, ErrorState, OfflineBanner, LockedFeature |
 | 21 | Français + arabe RTL, structure en/es | ✅ | 4 langues locales + traductions backend + cache |
@@ -66,7 +66,7 @@ Date : 2026-09-16. Légende : ✅ fait et vérifié · 🟡 fait, vérifié part
 
 1. **Backend (prérequis)** : vérification Google Play + RTDN, token par appareil, `GET /me`, `GET /me/stores`, `GET /dashboard/today`, enregistrement des tokens push (voir `mobile-api-gaps.md`).
 2. Tests de bout en bout avec des comptes de chaque rôle (Admin, vendeur, serviceCRM, SuperAdmin) et un employé multi-magasins.
-3. Module natif Google Play Billing (dev build) une fois le backend prêt ; tests en piste interne Play Console.
+3. Tests d'achat en piste interne Play Console (testeurs de licence) avec le build de développement.
 4. Écrans métier absents de Stitch et de cette phase : stock, ventes / POS, scanner, entrées de stock, clients, ordonnances.
 5. Notifications push, biométrie, changement de mot de passe connecté (endpoints manquants).
 6. Mode sombre (non défini dans Stitch), tests de composants et d'intégration (React Native Testing Library, Maestro).

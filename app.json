@@ -20,7 +20,7 @@
       "package": "com.quickpharma.mobile",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#f8f9ff",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -36,6 +36,7 @@
       "expo-secure-store",
       "expo-localization",
       "expo-font",
+      "expo-iap",
       [
         "expo-splash-screen",
         {

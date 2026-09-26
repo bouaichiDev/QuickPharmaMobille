@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Badge } from '@/components/ui/Badge';
@@ -8,8 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { quotaStateView } from '@/features/access/decisions';
 import { useAnyPermission, useCanManageSubscription } from '@/features/access/hooks';
+import { openWebApp } from '@/features/subscriptions/openWebApp';
 import { useTranslation } from '@/i18n/useTranslation';
-import { billingService } from '@/services/billing/billingService';
 import type { EffectiveAccess } from '@/types/access';
 import { colors, radii, spacing } from '@/theme';
 import { formatDate, formatNumber } from '@/utils/format';
@@ -85,12 +85,8 @@ export function SubscriptionCard({ access }: SubscriptionCardProps) {
         ) : null}
 
         <View style={styles.actions}>
-          {canManage && Platform.OS === 'android' && !isPlatform ? (
-            <Button
-              label={t('mobile.profile.manageOnGooglePlay')}
-              icon="open-in-new"
-              onPress={() => void billingService.openManageSubscriptions()}
-            />
+          {canManage && !isPlatform ? (
+            <Button label={t('mobile.profile.manageOnWeb')} icon="open-in-new" onPress={() => void openWebApp()} />
           ) : null}
           {canViewPlans && !isPlatform ? (
             <Button
