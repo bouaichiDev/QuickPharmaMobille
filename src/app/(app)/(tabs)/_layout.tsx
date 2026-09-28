@@ -46,7 +46,16 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: t('mobile.nav.home'), tabBarIcon: tabIcon('dashboard') }} />
+      <Tabs.Screen
+        name="home"
+        options={{ title: t('mobile.nav.home'), tabBarIcon: tabIcon('dashboard') }}
+      />
+      <Tabs.Screen
+        name="stock"
+        options={{ title: t('mobile.nav.stock'), tabBarIcon: tabIcon('inventory-2') }}
+      />
+      <Tabs.Screen name="categories" options={{ href: null }} />
+      <Tabs.Screen name="add-product" options={{ href: null, headerShown: false }} />
       <Tabs.Screen
         name="notifications"
         options={{
@@ -56,7 +65,10 @@ export default function TabsLayout() {
           tabBarBadgeStyle: { backgroundColor: colors.error },
         }}
       />
-      <Tabs.Screen name="more" options={{ title: t('mobile.nav.more'), tabBarIcon: tabIcon('grid-view') }} />
+      <Tabs.Screen
+        name="more"
+        options={{ title: t('mobile.nav.more'), tabBarIcon: tabIcon('grid-view') }}
+      />
     </Tabs>
   );
 }

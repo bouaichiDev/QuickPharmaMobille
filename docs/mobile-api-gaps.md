@@ -8,14 +8,14 @@ Priorité : **P1** bloque une fonctionnalité prévue, **P2** dégrade l'expéri
 
 Le backend vérifie désormais les achats auprès de Google (`purchases.subscriptionsv2.get`), acquitte, reçoit les RTDN et resynchronise chaque jour. L'application achète via `expo-iap` et n'active jamais rien elle-même.
 
-| Méthode | Route | Rôle |
-|---|---|---|
-| GET | `/billing/google-play/products` | plans vendus sur Play, avec `product_id` et `base_plan_id` |
-| GET | `/billing/google-play/account-token` | `obfuscatedAccountId` à passer à Google Play |
-| POST | `/billing/google-play/verify` | vérifie un achat et active l'abonnement |
-| POST | `/billing/google-play/restore` | revérifie les achats du téléphone |
-| GET | `/billing/google-play/status` | état synchronisé du compte |
-| POST | `/billing/google-play/rtdn` | notifications temps réel (Pub/Sub, public signé) |
+| Méthode | Route                                | Rôle                                                       |
+| ------- | ------------------------------------ | ---------------------------------------------------------- |
+| GET     | `/billing/google-play/products`      | plans vendus sur Play, avec `product_id` et `base_plan_id` |
+| GET     | `/billing/google-play/account-token` | `obfuscatedAccountId` à passer à Google Play               |
+| POST    | `/billing/google-play/verify`        | vérifie un achat et active l'abonnement                    |
+| POST    | `/billing/google-play/restore`       | revérifie les achats du téléphone                          |
+| GET     | `/billing/google-play/status`        | état synchronisé du compte                                 |
+| POST    | `/billing/google-play/rtdn`          | notifications temps réel (Pub/Sub, public signé)           |
 
 Contrat détaillé : `sassApi/docs/access-control/api-contract.md` §5 et `sassApi/docs/google-play-billing.md`.
 
@@ -27,31 +27,32 @@ Restent à faire hors code : produits et base plans activés dans Play Console, 
 
 `GET /dashboard` ne filtre que par année/mois. Le design Stitch montre des données absentes :
 
-| Donnée Stitch | Disponible ? | Ce que fait le mobile |
-|---|---|---|
-| Chiffre d'affaires **du jour** | Non (mois/année seulement) | Affiche le CA encaissé du mois / mois précédent / année |
-| Nombre de ventes de la période | Partiel : `CountSales` est toujours **annuel** | Affiché avec le libellé « sur l'année » |
-| Produits vendus (unités) | Non | Non affiché |
-| Valeur du stock | Non | Non affiché (on affiche `productsCount` et `unitsAvailable`) |
+| Donnée Stitch                              | Disponible ?                                                    | Ce que fait le mobile                                                                                                                         |
+| ------------------------------------------ | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chiffre d'affaires **du jour**             | Non (mois/année seulement)                                      | Affiche le CA encaissé du mois / mois précédent / année                                                                                       |
+| Nombre de ventes de la période             | Partiel : `CountSales` est toujours **annuel**                  | Affiché avec le libellé « sur l'année »                                                                                                       |
+| Produits vendus (unités)                   | Non                                                             | Non affiché                                                                                                                                   |
+| Valeur du stock                            | Non                                                             | Non affiché (on affiche `productsCount` et `unitsAvailable`)                                                                                  |
 | Produits bientôt expirés / expirés séparés | Non dans `/dashboard` (`expiredCount` mélange ≤ 7 j et expirés) | Utilise `GET /alerts/dashboard` → `by_type.product_expiring` / `product_expired` ; repli sur le compteur mélangé si les alertes sont refusées |
-| Ruptures / stock faible séparés | Non dans `/dashboard` (`outOfStockCount` mélange) | Idem via `by_type.stock_out` / `stock_low` |
-| Fréquentation par heure (courbe) | Non (seulement `performance.peakHour`) | Graphique mensuel ventes/achats payés + heure de pointe |
-| Paiements en attente | Partiel : `totalSalesUnpaid` (montant) | Affiché en montant |
+| Ruptures / stock faible séparés            | Non dans `/dashboard` (`outOfStockCount` mélange)               | Idem via `by_type.stock_out` / `stock_low`                                                                                                    |
+| Fréquentation par heure (courbe)           | Non (seulement `performance.peakHour`)                          | Graphique mensuel ventes/achats payés + heure de pointe                                                                                       |
+| Paiements en attente                       | Partiel : `totalSalesUnpaid` (montant)                          | Affiché en montant                                                                                                                            |
 
 Endpoint proposé : `GET /dashboard/today?store_id=` → `{ revenue_today, sales_count_today, units_sold_today, stock_value, expiring_soon_count, expired_count, low_stock_count, out_of_stock_count, pending_payments_count, hourly_sales: [{hour, count, amount}] }`, montants en nombres (pas de `number_format`).
 
 Autres remarques :
+
 - Les montants sont renvoyés en **chaînes** formatées (`"2840"`), sans décimales.
 - Les compteurs d'alertes dépendent de l'exécution des crons `alerts:stock|expiry` : sans cron, `/alerts/dashboard` renvoie 0.
 
 ## 3. Profil « me » et compte (P2)
 
-| Besoin | Situation | Proposition |
-|---|---|---|
-| Profil courant en un appel | Il faut combiner `GET /auth/check-token`, `GET /access/me` et `GET /users/show/0` (qui exige `store_id`) | `GET /me` → `{ id, first_name, last_name, email, phone, avatar_url, role, default_route, language }` |
-| Changer son mot de passe connecté | Inexistant (`/users/reset` ne sert qu'aux comptes `initialise`) | `POST /me/password` `{ current_password, password, password_confirmation }` |
-| Préférence de langue | `/changeLanguage` écrit en session (inopérant avec un token) | `PUT /me/preferences` `{ language }` |
-| Photo de profil | `users.image` = nom de fichier, pas d'URL | Renvoyer une URL signée |
+| Besoin                            | Situation                                                                                                | Proposition                                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Profil courant en un appel        | Il faut combiner `GET /auth/check-token`, `GET /access/me` et `GET /users/show/0` (qui exige `store_id`) | `GET /me` → `{ id, first_name, last_name, email, phone, avatar_url, role, default_route, language }` |
+| Changer son mot de passe connecté | Inexistant (`/users/reset` ne sert qu'aux comptes `initialise`)                                          | `POST /me/password` `{ current_password, password, password_confirmation }`                          |
+| Préférence de langue              | `/changeLanguage` écrit en session (inopérant avec un token)                                             | `PUT /me/preferences` `{ language }`                                                                 |
+| Photo de profil                   | `users.image` = nom de fichier, pas d'URL                                                                | Renvoyer une URL signée                                                                              |
 
 ## 4. Magasins (P2)
 
@@ -72,6 +73,7 @@ Autres remarques :
 Comportement attendu : une connexion mobile crée un token propre au mobile ; la déconnexion mobile ne supprime que ce token.
 
 Comportement actuel :
+
 - `login` crée toujours `createToken('MyApp')` : aucun nom d'appareil.
 - `logout` exécute `$request->user()->tokens()->delete()` : **déconnexion du Web et de tous les appareils**.
 - `config/sanctum.php` : `expiration => null` → tokens sans expiration, pas de refresh.
@@ -103,3 +105,19 @@ Proposition : `POST /devices` `{ platform, push_token, device_name }` et `DELETE
 ## 10. Formats de réponse hétérogènes (P3)
 
 Le client mobile gère : `{success,data,message}`, `{status,message,data}`, JSON brut (dashboard, traductions, notifications, plans/subscriptions/my), Resources `{data,links,meta}`, erreurs de validation en 400/404/422, refus d'accès `{code,reason,message_key,details}`.
+
+## 11. Gestion des catégories (P1)
+
+La documentation Swagger expose `GET /api/categoryListe` (`category.index`) avec `store_id` obligatoire, recherche `searchValue`, pagination (`page`, `per_page`), tri (`sortField`, `sortOrder`) et un paginator Laravel. Le mobile utilise cette route et l’identifiant chiffré du magasin actif.
+
+La réponse de liste expose `id`, `name`, `code`, `description`, `active` et les métadonnées de pagination ; elle ne donne pas le nombre de références par catégorie. Les routes et permissions pour le détail, la création et la modification restent à documenter avant d’activer ces actions dans le mobile.
+
+## 12. Catalogue produits (P1)
+
+Swagger expose `GET /api/productList/{page}` avec `store_id` obligatoire et filtres `searchValue`, `category_id`, `active`, `expiring_soon` et `low_stock`. La réponse est un Resource paginator (`data`, `links`, `meta`) avec nom, SKU, catégorie, quantités, seuil minimum, prix, taxe, état actif et indicateur de suivi de péremption. Le mobile utilise uniquement ces données pour la liste et ses filtres.
+
+Swagger documente `POST /api/products/create` (`product.save`) avec `productName`, `sku`, `status`, `minQuantity`, `sellingPrice`, `buyingPrice`, `hasExpiration` et `store_id` requis, et une réponse `{ success, id }`. Le mobile envoie les champs pris en charge et invalide le catalogue après création. `GET /api/providerDropdown` fournit les identifiants et noms des fournisseurs, utilisés comme `providerId`. Le schéma de création ne définit pas `categoryId`, `side_effects`, `includeTaxInPrice` ni une photo ; `typeId` est optionnel mais sa relation avec `categoryId` n’est pas spécifiée, donc ces champs ne sont pas assimilés. Swagger ne précise pas les valeurs de `status` ; le mobile transmet `"1"`/`"0"` pour les choix de disponibilité du formulaire.
+
+Pour les photos, `POST /api/upload` accepte un seul fichier multipart (`file`) avec `id`, `code` et `parent` obligatoires. La documentation ne définit pas comment ces champs associent le fichier à un produit, et `POST /api/product/update` ne décrit pas le format attendu pour `images` (simple chaîne). Le mobile permet la sélection multiple et l’aperçu local, mais ne téléverse ni ne persiste les images.
+
+La modification reste désactivée : Swagger requiert `categoryId` sur `POST /api/product/update`, mais ne documente pas le formulaire complet d’édition mobile.

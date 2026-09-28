@@ -45,6 +45,16 @@ export const endpoints = {
     list: '/plans',
     detail: (id: number) => `/plans/${id}`,
   },
+  categories: {
+    list: '/categoryListe',
+  },
+  providers: {
+    dropdown: '/providerDropdown',
+  },
+  products: {
+    list: (page: number) => `/productList/${page}`,
+    create: '/products/create',
+  },
   translations: (lang: string, version: string) =>
     `/translations/${encodeURIComponent(lang)}/${encodeURIComponent(version)}`,
 } as const;
