@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Screen } from '@/components/ui/Screen';
+import { useProfile } from '@/features/profile/profileApi';
 import { useCurrency } from '@/features/settings/settingsApi';
 import { useCategories } from '@/features/stores/useCategories';
 import { useProviders } from '@/features/stores/useProviders';
@@ -39,7 +40,7 @@ interface ProductFormValues {
   quantity: string;
   providerId: number | null;
   minimumStock: string;
-  availability: Availability;
+  availability: Availability | null;
   expiryRequired: boolean;
   expiryDate: string;
   usageInstructions: string;
@@ -61,8 +62,8 @@ const INITIAL_VALUES: ProductFormValues = {
   discount: '0',
   quantity: '0',
   providerId: null,
-  minimumStock: '5',
-  availability: 'inStock',
+  minimumStock: '0',
+  availability: null,
   expiryRequired: true,
   expiryDate: '',
   usageInstructions: '',
@@ -92,12 +93,17 @@ function productCreateInputFrom(form: ProductFormValues, sellingPrice: number): 
   return {
     productName: form.productName.trim(),
     sku: form.sku.trim(),
-    status: form.availability === 'inStock' ? '1' : '0',
+    // Web status IDs: Disponible = 7, Indisponible = 9.
+    status: form.availability === null ? '' : form.availability === 'inStock' ? '7' : '9',
     minQuantity: decimalValue(form.minimumStock),
     sellingPrice: sellingPrice.toFixed(2),
     buyingPrice: decimalValue(form.buyingPrice),
     hasExpiration: form.expiryRequired ? '1' : '0',
-    date: form.expiryRequired ? optionalValue(form.expiryDate) : undefined,
+    date: new Date().toISOString(),
+    date_expiration: form.expiryRequired ? optionalValue(form.expiryDate) : undefined,
+    categoryId: form.categoryId === null ? undefined : String(form.categoryId),
+    includeTaxInPrice: form.taxIncluded,
+    side_effects: optionalValue(form.sideEffects),
     tax: decimalValue(form.taxRate),
     quantity: decimalValue(form.quantity),
     discount: decimalValue(form.discount),
@@ -215,6 +221,7 @@ export function AddProductScreen() {
   const router = useRouter();
   const { t, tDynamic, locale } = useTranslation();
   const currency = useCurrency();
+  const profileQuery = useProfile();
   const currencyLabel = currency ?? t('mobile.products.form.currencyUnavailable');
   const categoriesQuery = useCategories('');
   const providersQuery = useProviders();
@@ -246,17 +253,30 @@ export function AddProductScreen() {
   async function saveProduct() {
     setSubmitted(true);
     if (!form.productName.trim() || !form.sku.trim()) return;
+    if (form.availability === null) {
+      Alert.alert(t('mobile.products.form.saveErrorTitle'), t('mobile.products.form.selectStatus'));
+      return;
+    }
+    if (Number(decimalValue(form.quantity)) > 0 && form.providerId === null) {
+      Alert.alert(
+        t('mobile.products.form.saveErrorTitle'),
+        t('mobile.products.form.providerRequired'),
+      );
+      return;
+    }
 
     try {
-      const result = await createProduct.mutateAsync(productCreateInputFrom(form, sellingPrice));
+      const result = await createProduct.mutateAsync({
+        ...productCreateInputFrom(form, sellingPrice),
+        files: productPhotos,
+        createdBy: profileQuery.data?.id === undefined ? undefined : String(profileQuery.data.id),
+      });
+      setForm({ ...INITIAL_VALUES });
+      setProductPhotos([]);
+      setSubmitted(false);
       Alert.alert(
         t('mobile.products.form.saveSuccessTitle'),
-        productPhotos.length > 0
-          ? t('mobile.products.form.saveSuccessPhotoNotSavedMessage', {
-              id: result.id,
-              count: productPhotos.length,
-            })
-          : t('mobile.products.form.saveSuccessMessage', { id: result.id }),
+        t('mobile.products.form.saveSuccessMessage', { id: result.id }),
         [{ text: t('mobile.products.form.done'), onPress: () => router.back() }],
       );
     } catch (error) {
@@ -362,9 +382,6 @@ export function AddProductScreen() {
           {t('mobile.products.form.currency', { currency: currencyLabel })}
         </AppText>
       </View>
-      <AppText variant="bodySm" color="onSurfaceVariant">
-        {t('mobile.products.form.apiLimits')}
-      </AppText>
 
       <FormSection number="1" title={t('mobile.products.form.general')}>
         <FormField
@@ -539,7 +556,9 @@ export function AddProductScreen() {
                 style={styles.selectField}
               >
                 <AppText variant="bodyMd" style={styles.selectText}>
-                  {t(`mobile.products.form.${form.availability}`)}
+                  {form.availability === null
+                    ? t('mobile.products.form.selectStatus')
+                    : t(`mobile.products.form.${form.availability}`)}
                 </AppText>
                 <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
               </Pressable>
@@ -724,7 +743,7 @@ export function AddProductScreen() {
         onClose={() => setAvailabilitySheetOpen(false)}
         title={t('mobile.products.form.availability')}
       >
-        {(['inStock', 'outOfStock'] as const).map((availability) => (
+        {(['outOfStock', 'inStock'] as const).map((availability) => (
           <Pressable
             key={availability}
             accessibilityRole="button"

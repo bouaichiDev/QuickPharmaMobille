@@ -1,3 +1,6 @@
+import type { ImagePickerAsset } from 'expo-image-picker';
+import { Platform } from 'react-native';
+
 import { ApiError } from '@/services/api/apiError';
 import { apiGet, apiPost } from '@/services/api/client';
 import { endpoints } from '@/services/api/endpoints';
@@ -33,7 +36,16 @@ export interface ProductFilters {
 export interface ProductCreateInput {
   productName: string;
   sku: string;
-  status: '0' | '1';
+  status: string;
+  categoryId?: string;
+  typeId?: string;
+  location_id?: string;
+  createdBy?: string;
+  includeTaxInPrice?: boolean;
+  side_effects?: string;
+  date_expiration?: string;
+  images?: string;
+  files?: ImagePickerAsset[];
   minQuantity: string;
   sellingPrice: string;
   buyingPrice: string;
@@ -59,10 +71,36 @@ export interface ProductCreateResult {
 function productCreateResultFrom(value: unknown): ProductCreateResult | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
-  if (raw.success !== 'Product has been created successfully.' || typeof raw.id !== 'string') {
+  const validId =
+    (typeof raw.id === 'number' && Number.isSafeInteger(raw.id) && raw.id > 0) ||
+    (typeof raw.id === 'string' && raw.id.trim().length > 0);
+  if (typeof raw.success !== 'string' || !raw.success.trim() || !validId) {
     return null;
   }
-  return { success: raw.success, id: raw.id };
+  return { success: raw.success, id: String(raw.id) };
+}
+
+export function productCreateFormData(input: ProductCreateInput): FormData {
+  const { files = [], images = '', ...fields } = input;
+  const body = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) body.append(key, String(value));
+  }
+  body.append('images', images);
+  files.forEach((asset, index) => {
+    if (Platform.OS === 'web') {
+      if (!asset.file) throw new ApiError({ kind: 'unknown', message: 'Missing photo file.' });
+      body.append('files[' + index + ']', asset.file);
+    } else {
+      // React Native accepts local URI descriptors instead of browser File objects.
+      body.append('files[' + index + ']', {
+        uri: asset.uri,
+        name: asset.fileName ?? asset.uri.split('/').pop() ?? 'photo-' + index,
+        type: asset.mimeType ?? 'application/octet-stream',
+      } as unknown as Blob);
+    }
+  });
+  return body;
 }
 
 function productFrom(value: unknown): Product | null {
@@ -139,7 +177,10 @@ function productPageFrom(value: unknown): ProductPage | null {
 
 export const productsApi = {
   async create(input: ProductCreateInput): Promise<ProductCreateResult> {
-    const response = await apiPost<unknown>(endpoints.products.create, input);
+    const response = await apiPost<unknown>(
+      endpoints.products.create,
+      productCreateFormData(input),
+    );
     const result = productCreateResultFrom(response);
     if (!result) {
       logger.warn('Unexpected product create payload', {

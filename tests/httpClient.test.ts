@@ -1,4 +1,9 @@
-import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
+import {
+  AxiosError,
+  AxiosHeaders,
+  type AxiosAdapter,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 
 import { ApiError } from '@/services/api/apiError';
 import {
@@ -13,7 +18,11 @@ function config(partial: Partial<InternalAxiosRequestConfig>): InternalAxiosRequ
 
 describe('injectRequestContext', () => {
   it('puts store_id and lang in the query string for GET', () => {
-    const result = injectRequestContext(config({ method: 'get', params: { page: 2 } }), 'enc-store', 'ar');
+    const result = injectRequestContext(
+      config({ method: 'get', params: { page: 2 } }),
+      'enc-store',
+      'ar',
+    );
     expect(result.params).toEqual({ store_id: 'enc-store', lang: 'ar', page: 2 });
   });
 
@@ -27,8 +36,22 @@ describe('injectRequestContext', () => {
   });
 
   it('skips the store when requested', () => {
-    const result = injectRequestContext(config({ method: 'get', skipStoreContext: true }), 'enc-store', 'fr');
+    const result = injectRequestContext(
+      config({ method: 'get', skipStoreContext: true }),
+      'enc-store',
+      'fr',
+    );
     expect(result.params).toEqual({ lang: 'fr' });
+  });
+
+  it('preserves explicit context on native FormData without has()', () => {
+    const form = new FormData();
+    form.append('store_id', 'explicit');
+    Object.defineProperty(form, 'has', { value: undefined });
+    Object.defineProperty(form, 'getParts', { value: () => [{ fieldName: 'store_id' }] });
+    injectRequestContext(config({ method: 'post', data: form }), 'enc-store', 'es');
+    expect(form.getAll('store_id')).toEqual(['explicit']);
+    expect(form.get('lang')).toBe('es');
   });
 
   it('appends to FormData bodies', () => {
@@ -56,13 +79,19 @@ describe('createHttpClient', () => {
 
   function reject(status: number, data: unknown): AxiosAdapter {
     return async (requestConfig) => {
-      throw new AxiosError('fail', 'ERR_BAD_RESPONSE', requestConfig, {}, {
-        status,
-        data,
-        headers: {},
-        config: requestConfig,
-        statusText: '',
-      });
+      throw new AxiosError(
+        'fail',
+        'ERR_BAD_RESPONSE',
+        requestConfig,
+        {},
+        {
+          status,
+          data,
+          headers: {},
+          config: requestConfig,
+          statusText: '',
+        },
+      );
     };
   }
 
@@ -70,7 +99,13 @@ describe('createHttpClient', () => {
     let seen: InternalAxiosRequestConfig | undefined;
     const { client } = setup(async (requestConfig) => {
       seen = requestConfig;
-      return { data: { ok: true }, status: 200, statusText: 'OK', headers: {}, config: requestConfig };
+      return {
+        data: { ok: true },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: requestConfig,
+      };
     });
 
     await client.get('/dashboard');
@@ -101,21 +136,31 @@ describe('createHttpClient', () => {
 
   it('ignores 401 on public requests (wrong password)', async () => {
     const { client, context } = setup(reject(401, { message: 'Unauthorised.' }));
-    await expect(client.post('/login', {}, { skipAuth: true })).rejects.toMatchObject({ kind: 'unauthorized' });
+    await expect(client.post('/login', {}, { skipAuth: true })).rejects.toMatchObject({
+      kind: 'unauthorized',
+    });
     expect(context.onUnauthorized).not.toHaveBeenCalled();
   });
 
   it('notifies access refusals (403 with code) without logging out', async () => {
     const { client, context } = setup(
-      reject(403, { code: 'PERMISSION_DENIED', reason: 'PERMISSION_NOT_GRANTED', message: 'Denied' }),
+      reject(403, {
+        code: 'PERMISSION_DENIED',
+        reason: 'PERMISSION_NOT_GRANTED',
+        message: 'Denied',
+      }),
     );
-    await expect(client.get('/dashboard')).rejects.toMatchObject({ accessCode: 'PERMISSION_DENIED' });
+    await expect(client.get('/dashboard')).rejects.toMatchObject({
+      accessCode: 'PERMISSION_DENIED',
+    });
     expect(context.onAccessDenied).toHaveBeenCalledTimes(1);
     expect(context.onUnauthorized).not.toHaveBeenCalled();
   });
 
   it('notifies quota refusals (409)', async () => {
-    const { client, context } = setup(reject(409, { code: 'QUOTA_EXCEEDED', message: 'Limit', details: { limit: 1, used: 1 } }));
+    const { client, context } = setup(
+      reject(409, { code: 'QUOTA_EXCEEDED', message: 'Limit', details: { limit: 1, used: 1 } }),
+    );
     await expect(client.post('/stores', {})).rejects.toMatchObject({ kind: 'access_denied' });
     expect(context.onAccessDenied).toHaveBeenCalledTimes(1);
   });

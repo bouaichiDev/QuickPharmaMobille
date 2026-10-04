@@ -54,7 +54,12 @@ export function injectRequestContext(
   if (BODY_METHODS.has(method)) {
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       for (const [key, value] of Object.entries(additions)) {
-        if (!config.data.has(key)) config.data.append(key, value);
+        const form = config.data as FormData & { getParts?: () => { fieldName: string }[] };
+        const hasKey =
+          typeof form.has === 'function'
+            ? form.has(key)
+            : (form.getParts?.().some((part) => part.fieldName === key) ?? false);
+        if (!hasKey) form.append(key, value);
       }
     } else {
       const body = (config.data ?? {}) as Record<string, unknown>;
@@ -67,7 +72,11 @@ export function injectRequestContext(
   return config;
 }
 
-export function createHttpClient({ baseURL, timeoutMs, context }: HttpClientOptions): AxiosInstance {
+export function createHttpClient({
+  baseURL,
+  timeoutMs,
+  context,
+}: HttpClientOptions): AxiosInstance {
   const instance = create({
     baseURL,
     timeout: timeoutMs,
@@ -83,6 +92,11 @@ export function createHttpClient({ baseURL, timeoutMs, context }: HttpClientOpti
 
   instance.interceptors.request.use((config) => {
     const headers = AxiosHeaders.from(config.headers);
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      // The transport supplies the boundary. XHR supports native URI file parts.
+      headers.setContentType(false);
+      config.adapter = 'xhr';
+    }
     const language = context.getLanguage();
     headers.set('Accept-Language', language);
 
