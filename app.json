@@ -38,6 +38,14 @@
       "expo-font",
       "expo-iap",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "QuickPharma needs access to select product photos.",
+          "cameraPermission": "QuickPharma uses the camera to take product photos.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/logo.png",
