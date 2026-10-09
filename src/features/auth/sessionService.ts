@@ -2,6 +2,8 @@ import { secureKeys } from '@/constants/storageKeys';
 import { isApiError } from '@/services/api/apiError';
 import { logger } from '@/utils/logger';
 
+import type { MenuNode } from '@/types/access';
+
 import type { CheckTokenData, LoginResponseData, Session, SessionStore } from './types';
 
 export interface SessionStorage {
@@ -30,6 +32,7 @@ export function sessionFromLogin(data: LoginResponseData, email: string): Sessio
   const defaultStore = storeFrom(data.store_id, data.store_name);
   return {
     token: data.token,
+    menus: Array.isArray(data.permissions) ? (data.permissions as MenuNode[]) : undefined,
     userId: data.user_id,
     role: data.role,
     defaultRoute: data.default_route,
@@ -44,6 +47,7 @@ export function refreshSessionFromCheck(session: Session, data: CheckTokenData):
   const defaultStore = storeFrom(data.store_id, data.store_name);
   return {
     ...session,
+    menus: Array.isArray(data.permissions) ? (data.permissions as MenuNode[]) : undefined,
     userId: data.user_id,
     role: data.role,
     defaultRoute: data.default_route,

@@ -53,6 +53,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#f8f9ff"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "QuickPharma utilise la caméra pour scanner les badges clients.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {

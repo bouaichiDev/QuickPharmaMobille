@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { spacing } from '@/theme';
 
 import { CrmDashboard } from '../components/CrmDashboard';
+import { PlatformDashboard } from '../components/PlatformDashboard';
 import { PharmacyDashboard } from '../components/PharmacyDashboard';
 import { resolveDashboardKind } from '../resolveDashboardKind';
 
@@ -36,7 +37,11 @@ export function DashboardScreen() {
   }
 
   const kind = access.data
-    ? resolveDashboardKind(session?.defaultRoute, access.data.role.code ?? session?.role, access.data)
+    ? resolveDashboardKind(
+        session?.defaultRoute,
+        access.data.role.code ?? session?.role,
+        access.data,
+      )
     : null;
 
   return (
@@ -46,7 +51,11 @@ export function DashboardScreen() {
           {t('mobile.dashboard.greeting')} {displayName(profile.data, '')}
         </AppText>
         <AppText variant="headlineLg" color="primary" accessibilityRole="header">
-          {kind === 'crm' ? t('mobile.dashboard.crmTitle') : t('mobile.dashboard.title')}
+          {kind === 'crm'
+            ? t('mobile.dashboard.crmTitle')
+            : kind === 'platform'
+              ? t('mobile.dashboard.platformTitle')
+              : t('mobile.dashboard.title')}
         </AppText>
       </View>
 
@@ -59,9 +68,23 @@ export function DashboardScreen() {
       ) : kind === 'crm' ? (
         <CrmDashboard />
       ) : kind === 'platform' ? (
-        <EmptyState icon="admin-panel-settings" title={t('mobile.dashboard.platformTitle')} message={t('mobile.dashboard.platformMessage')} />
+        access.data.permissions.includes('platform.metrics.view') ? (
+          <PlatformDashboard />
+        ) : (
+          <EmptyState
+            icon="lock-outline"
+            tone="locked"
+            title={t('mobile.dashboard.noDashboardTitle')}
+            message={t('mobile.dashboard.noDashboardMessage')}
+          />
+        )
       ) : (
-        <EmptyState icon="lock-outline" tone="locked" title={t('mobile.dashboard.noDashboardTitle')} message={t('mobile.dashboard.noDashboardMessage')} />
+        <EmptyState
+          icon="lock-outline"
+          tone="locked"
+          title={t('mobile.dashboard.noDashboardTitle')}
+          message={t('mobile.dashboard.noDashboardMessage')}
+        />
       )}
     </Screen>
   );

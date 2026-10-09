@@ -32,43 +32,46 @@ export default function TabsLayout() {
   const unread = (messages.data?.pages[0]?.unreadCount ?? 0) + (alerts.data?.total_unread ?? 0);
 
   return (
-    <Tabs
-      screenOptions={{
-        header: Header,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.onSurfaceVariant,
-        tabBarLabelStyle: { ...fontForScript(fontFamilies.bodySemiBold, latin), fontSize: 11 },
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.outlineSoft,
-          minHeight: layout.tabBarHeight,
-        },
-        sceneStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{ title: t('mobile.nav.home'), tabBarIcon: tabIcon('dashboard') }}
-      />
-      <Tabs.Screen
-        name="stock"
-        options={{ title: t('mobile.nav.stock'), tabBarIcon: tabIcon('inventory-2') }}
-      />
-      <Tabs.Screen name="categories" options={{ href: null }} />
-      <Tabs.Screen name="add-product" options={{ href: null, headerShown: false }} />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: t('mobile.nav.notifications'),
-          tabBarIcon: tabIcon('notifications-none'),
-          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.error },
+    <>
+      <Tabs
+        screenOptions={{
+          header: Header,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.onSurfaceVariant,
+          tabBarLabelStyle: { ...fontForScript(fontFamilies.bodySemiBold, latin), fontSize: 11 },
+          tabBarStyle: {
+            display: 'none',
+            backgroundColor: colors.surface,
+            borderTopColor: colors.outlineSoft,
+            minHeight: layout.tabBarHeight,
+          },
+          sceneStyle: { backgroundColor: colors.background },
         }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{ title: t('mobile.nav.more'), tabBarIcon: tabIcon('grid-view') }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="home"
+          options={{ title: t('mobile.nav.home'), tabBarIcon: tabIcon('dashboard') }}
+        />
+        <Tabs.Screen
+          name="stock"
+          options={{ title: t('mobile.nav.stock'), tabBarIcon: tabIcon('inventory-2') }}
+        />
+        <Tabs.Screen name="categories" options={{ href: null }} />
+        <Tabs.Screen name="add-product" options={{ href: null, headerShown: false }} />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            title: t('mobile.nav.notifications'),
+            tabBarIcon: tabIcon('notifications-none'),
+            tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
+            tabBarBadgeStyle: { backgroundColor: colors.error },
+          }}
+        />
+        <Tabs.Screen
+          name="more"
+          options={{ title: t('mobile.nav.more'), tabBarIcon: tabIcon('grid-view') }}
+        />
+      </Tabs>
+    </>
   );
 }

@@ -1,3 +1,5 @@
+import type { MenuNode } from '@/types/access';
+
 /** `data` of POST /login (RegisterController::login). */
 export interface LoginResponseData {
   token: string;
@@ -10,7 +12,7 @@ export interface LoginResponseData {
   /** Encrypted id of the first store linked to the user (null for SuperAdmin). */
   store_id: string | null;
   store_name: string | null;
-  /** Legacy menu tree; access rules come from GET /access/me instead. */
+  /** Role menu tree returned by login and check-token (not action permission codes). */
   permissions: unknown;
   subscription?: unknown;
 }
@@ -52,4 +54,6 @@ export interface Session {
   defaultStore: SessionStore | null;
   /** Store chosen by the user; revalidated at startup. */
   activeStore: SessionStore | null;
+  /** Retained from login/check-token; absent only on older stored sessions. */
+  menus?: MenuNode[];
 }

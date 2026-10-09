@@ -1,0 +1,3 @@
+/* Original illustration supplied in the Stitch service form. */
+export const stitchClinicalImage =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpK9JRuoGNWOZ_yB91tHzzpfxrfKw_h73qw0l5gGYFlJOu8neA9nAfy1B6gs0x4grZeS3gtzSbgjPEMVp3YXl8xKMNrubKadxXPBXerUC5XJ1PMvo1oZu6PYJM13UcClxycQrCi6saCeGM6Cj-xZgumtX5F5KAB_smIEUSIh67jRtmLnk5swwOIO0kaA80DtoYwtupalZvo6kbV6ZcFxC1ScOKIWCKrqBRXUAB_w';

@@ -5,7 +5,7 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AppText, useLatinFonts } from '@/components/ui/AppText';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -703,7 +703,7 @@ export function AddProductScreen() {
         />
       </View>
 
-      <BottomSheet
+      <SelectionDialog
         visible={categorySheetOpen}
         onClose={() => setCategorySheetOpen(false)}
         title={t('mobile.products.chooseCategory')}
@@ -736,9 +736,9 @@ export function AddProductScreen() {
             {t('mobile.products.form.noCategories')}
           </AppText>
         ) : null}
-      </BottomSheet>
+      </SelectionDialog>
 
-      <BottomSheet
+      <SelectionDialog
         visible={availabilitySheetOpen}
         onClose={() => setAvailabilitySheetOpen(false)}
         title={t('mobile.products.form.availability')}
@@ -759,9 +759,9 @@ export function AddProductScreen() {
             ) : null}
           </Pressable>
         ))}
-      </BottomSheet>
+      </SelectionDialog>
 
-      <BottomSheet
+      <SelectionDialog
         visible={providerSheetOpen}
         onClose={() => setProviderSheetOpen(false)}
         title={t('mobile.products.form.supplier')}
@@ -808,9 +808,9 @@ export function AddProductScreen() {
             ) : null}
           </>
         )}
-      </BottomSheet>
+      </SelectionDialog>
 
-      <BottomSheet
+      <SelectionDialog
         visible={photoSourceSheetOpen}
         onClose={() => setPhotoSourceSheetOpen(false)}
         title={t('mobile.products.form.photo')}
@@ -831,7 +831,7 @@ export function AddProductScreen() {
           <AppText variant="labelMd">{t('mobile.products.form.choosePhoto')}</AppText>
           <Icon name="photo-library" size="sm" color="primary" />
         </Pressable>
-      </BottomSheet>
+      </SelectionDialog>
     </Screen>
   );
 }

@@ -132,3 +132,16 @@ describe('session mapping', () => {
     expect(refreshed.activeStore).toEqual({ id: 'enc-store-1-new', name: 'Pharmacie Centrale' });
   });
 });
+
+
+describe('login menu persistence', () => {
+  it('retains the login tree including an explicitly empty tree', () => {
+    const menus = [{ id: 7, label: 'Cabinet', children: [] }];
+    expect(sessionFromLogin({ ...checkData, token: 'tok', permissions: menus }, 'test@invalid').menus).toEqual(menus);
+    expect(sessionFromLogin({ ...checkData, token: 'tok', permissions: [] }, 'test@invalid').menus).toEqual([]);
+  });
+  it('replaces stored menus with the current role tree on session verification', () => {
+    const previous = sessionFromLogin({ ...checkData, token: 'tok', permissions: [{ id: 7 }] }, 'test@invalid');
+    expect(refreshSessionFromCheck(previous, { ...checkData, role: 'vendeur', permissions: [] }).menus).toEqual([]);
+  });
+});
