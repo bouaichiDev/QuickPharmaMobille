@@ -12,7 +12,7 @@ module.exports = ({ config }) => {
     name: isProduction ? 'QuickPharma' : 'QuickPharma',
     slug: 'quickpharma',
     scheme: 'quickpharma',
-    version: '1.0.1',
+    version: '1.0.2',
     orientation: 'portrait',
 
     ios: {
