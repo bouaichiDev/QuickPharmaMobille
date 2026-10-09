@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Icon } from '@/components/ui/Icon';
 import { ListRow } from '@/components/ui/ListRow';
 import { useI18nStore } from '@/i18n/i18nStore';
@@ -34,7 +34,11 @@ export function LanguageSetting() {
           </AppText>
         }
       />
-      <BottomSheet visible={open} onClose={() => setOpen(false)} title={t('mobile.profile.language')}>
+      <SelectionDialog
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={t('mobile.profile.language')}
+      >
         {SUPPORTED_LANGUAGES.map((code) => {
           const selected = code === language;
           const needsRestart = isRTLLanguage(code) !== isRTLLanguage(language);
@@ -46,7 +50,11 @@ export function LanguageSetting() {
               onPress={() => void select(code)}
               style={[styles.option, selected ? styles.selected : null]}
             >
-              <AppText variant="labelLg" color={selected ? 'onPrimary' : 'onSurface'} style={styles.label}>
+              <AppText
+                variant="labelLg"
+                color={selected ? 'onPrimary' : 'onSurface'}
+                style={styles.label}
+              >
                 {t(`mobile.languages.${code}`)}
               </AppText>
               {needsRestart && !selected ? (
@@ -61,7 +69,7 @@ export function LanguageSetting() {
         <AppText variant="bodySm" color="onSurfaceVariant">
           {t('mobile.profile.languageRestart')}
         </AppText>
-      </BottomSheet>
+      </SelectionDialog>
     </>
   );
 }

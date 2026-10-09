@@ -6,7 +6,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { AppText, useLatinFonts } from '@/components/ui/AppText';
 import { Badge } from '@/components/ui/Badge';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { CrmPage } from '@/features/crm/components/CrmDesign';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
@@ -217,7 +217,7 @@ export function ProductsScreen() {
         </Card>
       )}
 
-      <BottomSheet
+      <CrmPage
         visible={categorySheetOpen}
         onClose={() => setCategorySheetOpen(false)}
         title={t('mobile.products.chooseCategory')}
@@ -253,7 +253,7 @@ export function ProductsScreen() {
             ) : null}
           </Pressable>
         ))}
-      </BottomSheet>
+      </CrmPage>
     </Screen>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Icon } from '@/components/ui/Icon';
 import { useI18nStore } from '@/i18n/i18nStore';
 import { SUPPORTED_LANGUAGES } from '@/i18n/languages';
@@ -27,7 +27,7 @@ export function LanguagePill() {
         <AppText variant="labelLg">{language.toUpperCase()}</AppText>
         <Icon name="expand-more" size="sm" color="onSurfaceVariant" />
       </Pressable>
-      <BottomSheet visible={open} onClose={() => setOpen(false)} title={t('mobile.profile.language')}>
+      <SelectionDialog visible={open} onClose={() => setOpen(false)} title={t('mobile.profile.language')}>
         {SUPPORTED_LANGUAGES.map((code) => (
           <Pressable
             key={code}
@@ -44,7 +44,7 @@ export function LanguagePill() {
             </AppText>
           </Pressable>
         ))}
-      </BottomSheet>
+      </SelectionDialog>
     </>
   );
 }

@@ -1,5 +1,16 @@
 # État d'avancement — phase 1
 
+## Ajout du 8 octobre 2026 — menu Plus et CRM mobile
+
+- « Plus » ouvre une feuille modale avec une grille de services, recherche, options filtrées par les permissions effectives de `/access/me`, et accès séparé au profil. Fermeture par glissement du bandeau vers le bas, toucher hors de la feuille ou retour Android.
+- Routes natives `/crm/[module]` : dashboard, clients, services, catalogue des forfaits, forfaits clients, séances, rendez-vous, paiements, rapports, journal, champs de service et catalogues de soins.
+- Listes et historiques paginés, fiches, créations et modifications, suppression confirmée selon les droits, conversion rendez-vous → séance et encaissement sur séance ou forfait. Les créations soumises aux quotas sont bloquées quand la configuration est absente ou le quota épuisé ; les créations de séances gardent leur clé d’idempotence lors des reprises.
+- Composition des forfaits avec plusieurs services, observations, zones traitées, prescriptions, champs personnalisés simples et photos clients avant/après avec ajout et suppression.
+- TypeScript et lint validés ; 16 suites et 101 tests réussis, dont les contrôles d’accès, quotas, validation et contrats de pagination/API du CRM. Bundles web et Android/Hermes exportés. Les parcours connectés CRM, les gestes sur appareil et iOS restent à valider : les résultats historiques ci-dessous ne couvrent pas ces ajouts.
+- La parité avec le CRM web reste partielle : impression/PDF, pièces jointes générales, signature dessinée, champs personnalisés de type fichier/image/signature et règles avancées de tarification ne sont pas portés. Les nouveaux libellés CRM disposent de valeurs françaises ; la traduction complète des nouveaux écrans reste à compléter.
+
+Les éléments suivants décrivent les validations historiques de septembre 2026.
+
 Date : 2026-09-16. Légende : ✅ fait et vérifié · 🟡 fait, vérifié partiellement · ⛔ bloqué par le backend · ⬜ non commencé.
 
 ## Vérifications exécutées
@@ -63,6 +74,16 @@ Date : 2026-09-16. Légende : ✅ fait et vérifié · 🟡 fait, vérifié part
 - Le dossier `android/` est généré (Continuous Native Generation) et ignoré par git.
 
 ## Reste à développer
+
+### Intégration des exports Stitch CRM (8 octobre 2026)
+
+La reprise visuelle corrige les cartes de séances, le planning, le dégradé de recettes, les formulaires et les cartes clients/services/forfaits/paiements. Les historiques du dossier utilisent un en-tête patient compact. L’onglet Services CRM ajouté a été retiré : la navigation inférieure conserve ses entrées initiales et reste visible dans les fiches et formulaires. Seul Plus utilise le panneau glissable, avec les modules autorisés pour le rôle connecté.
+
+Les 18 états Stitch et le planning supplémentaire sont capturés dans l’aperçu web mobile. Les dates, identités, photos et agrégats fictifs des exports ne sont pas injectés dans les dossiers réels. Le parcours Admin a été testé et capturé sur Medium_Phone_API_35 avec le compte fourni : connexion, restauration de session, listes et fiches CRM, formulaires sans enregistrement, calendrier natif, panneau Plus glissable et aperçu d’impression. Les autres rôles restent à vérifier. Voir `design-qa.md` pour le périmètre exact et les différences documentées.
+
+Validation finale : 107 tests / 17 suites, TypeScript, ESLint et export Android/Hermes (1 682 modules) réussis. Le scanner caméra est chargé à la demande et laisse une saisie manuelle sur les anciens builds. Scanner et impression nécessitent une reconstruction du development build si leurs modules natifs sont absents.
+
+Build natif CRM x86_64 installé et démarrage validé : 536 tâches Gradle, autolinking DateTimePicker actualisé et chemins de cache normalisés vers Q: pour Windows. Corrections vérifiées sur Android : durée calculée à partir des horaires de rendez-vous, titre Nouvelle séance, références de paiement compactes, état de photo indisponible avec réessai. Une photo du compte ne charge pas ; caméra et impression système non testées.
 
 1. **Backend (prérequis)** : vérification Google Play + RTDN, token par appareil, `GET /me`, `GET /me/stores`, `GET /dashboard/today`, enregistrement des tokens push (voir `mobile-api-gaps.md`).
 2. Tests de bout en bout avec des comptes de chaque rôle (Admin, vendeur, serviceCRM, SuperAdmin) et un employé multi-magasins.
