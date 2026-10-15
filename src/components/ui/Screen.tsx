@@ -22,6 +22,7 @@ interface ScreenProps {
   keyboard?: boolean;
   header?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  innerStyle?: StyleProp<ViewStyle>;
   background?: keyof typeof colors;
 }
 
@@ -34,6 +35,7 @@ export function Screen({
   keyboard = false,
   header,
   contentStyle,
+  innerStyle,
   background = 'background',
 }: ScreenProps) {
   const body = scroll ? (
@@ -51,7 +53,7 @@ export function Screen({
         ) : undefined
       }
     >
-      <View style={styles.inner}>{children}</View>
+      <View style={[styles.inner, innerStyle]}>{children}</View>
     </ScrollView>
   ) : (
     <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>

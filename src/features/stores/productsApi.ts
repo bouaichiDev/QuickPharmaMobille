@@ -108,7 +108,10 @@ function productFrom(value: unknown): Product | null {
   const raw = value as Record<string, unknown>;
   const id = toNumber(raw.id);
   const categoryId = toNumber(raw.categoryId);
-  const quantity = raw.quantity == null ? null : toNumber(raw.quantity);
+  // The list endpoint counts available stock in QteAvailable; quantity is the
+  // legacy field and may describe the original receipt rather than live stock.
+  const availableQuantity = raw.QteAvailable ?? raw.quantity;
+  const quantity = availableQuantity == null ? null : toNumber(availableQuantity);
   const minQuantity = raw.minQuantity == null ? null : toNumber(raw.minQuantity);
   const buyingPrice = raw.buyingPrice == null ? null : toNumber(raw.buyingPrice);
   const sellingPrice = toNumber(raw.sellingPrice);

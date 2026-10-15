@@ -5,11 +5,10 @@ import { queryClient } from '@/providers/queryClient';
 import { registerApiContext } from '@/services/api/client';
 
 import { accessApi } from './accessApi';
-import { accessRefreshIntervalMs } from './decisions';
 
 export const accessQueryKey = (storeId: string | null) => ['access', 'me', storeId] as const;
 
-/** GET /access/me for the active store: the single source of UI access rules. */
+/** Load action rules once per store; refresh only on explicit invalidation/refusal. */
 export function useAccess() {
   const storeId = useSessionStore((state) => state.session?.activeStore?.id ?? null);
   const authenticated = useSessionStore((state) => state.status === 'authenticated');
@@ -18,8 +17,11 @@ export function useAccess() {
     queryKey: accessQueryKey(storeId),
     queryFn: accessApi.getMe,
     enabled: authenticated,
-    staleTime: (query) => accessRefreshIntervalMs(query.state.data),
-    refetchInterval: (query) => accessRefreshIntervalMs(query.state.data),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

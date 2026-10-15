@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AppText } from '@/components/ui/AppText';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Icon } from '@/components/ui/Icon';
 import { SkeletonCards } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,7 +19,8 @@ interface StoreSwitcherSheetProps {
 
 export function StoreSwitcherSheet({ visible, onClose }: StoreSwitcherSheetProps) {
   const { t } = useTranslation();
-  const { store, stores, storesLoading, storesError, refetchStores, switchStore } = useCurrentStore();
+  const { store, stores, storesLoading, storesError, refetchStores, switchStore } =
+    useCurrentStore();
 
   async function select(next: SessionStore) {
     onClose();
@@ -27,7 +28,7 @@ export function StoreSwitcherSheet({ visible, onClose }: StoreSwitcherSheetProps
   }
 
   return (
-    <BottomSheet
+    <SelectionDialog
       visible={visible}
       onClose={onClose}
       title={t('mobile.store.selectTitle')}
@@ -53,7 +54,11 @@ export function StoreSwitcherSheet({ visible, onClose }: StoreSwitcherSheetProps
               style={[styles.row, current ? styles.current : null]}
             >
               <Icon name="storefront" size="md" color={current ? 'onPrimary' : 'primary'} />
-              <AppText variant="labelLg" color={current ? 'onPrimary' : 'onSurface'} style={styles.name}>
+              <AppText
+                variant="labelLg"
+                color={current ? 'onPrimary' : 'onSurface'}
+                style={styles.name}
+              >
                 {item.name}
               </AppText>
               {current ? (
@@ -67,7 +72,7 @@ export function StoreSwitcherSheet({ visible, onClose }: StoreSwitcherSheetProps
           );
         })
       )}
-    </BottomSheet>
+    </SelectionDialog>
   );
 }
 

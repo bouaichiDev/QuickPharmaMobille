@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { Alert, Platform } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
 import { AddProductScreen } from '@/features/stores/screens/AddProductScreen';
@@ -9,6 +9,17 @@ import { apiPost } from '@/services/api/client';
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
   useFocusEffect: jest.fn(),
+  useLocalSearchParams: jest.fn(() => ({})),
+}));
+jest.mock('@/features/access/useAccess', () => ({ useAccess: () => ({ data: undefined }) }));
+jest.mock('@/features/crm/modules', () => ({ can: () => true }));
+jest.mock('@/features/catalogue/useStock', () => ({ useStockScope: () => 1 }));
+jest.mock('@/features/catalogue/stockApi', () => ({ stockApi: { detail: jest.fn() } }));
+jest.mock('@/features/catalogue/StockDesign', () => ({ SNote: 'Text' }));
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: undefined }),
+  useMutation: () => ({ isPending: false, mutateAsync: jest.fn() }),
+  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
 }));
 jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
@@ -72,6 +83,7 @@ const post = jest.mocked(apiPost);
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(useLocalSearchParams).mockReturnValue({});
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   post.mockResolvedValue({ success: 'Product created', id: 123 });
 });
@@ -218,4 +230,13 @@ test('clears draft fields, photos, validation, and open sheets when leaving the 
   expect(screen.queryByText('Test category')).toBeNull();
   expect(screen.queryAllByLabelText(key('removePhoto'))).toHaveLength(0);
   expect(post).not.toHaveBeenCalled();
+});
+
+test('keeps edit mode values when leaving the screen', () => {
+  jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
+  const screen = render(<AddProductScreen />);
+  const onBlur = jest.mocked(useFocusEffect).mock.calls[0]![0]()!;
+  fireEvent.changeText(screen.getByLabelText(key('name')), 'Existing product');
+  act(() => onBlur());
+  expect(screen.getByLabelText(key('name')).props.value).toBe('Existing product');
 });

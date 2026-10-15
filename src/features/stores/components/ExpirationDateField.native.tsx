@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { colors, radii, spacing } from '@/theme';
@@ -80,7 +80,11 @@ export function ExpirationDateField({
         <Icon name="calendar-today" size="sm" color="primary" />
       </Pressable>
       {Platform.OS === 'ios' ? (
-        <BottomSheet visible={pickerVisible} onClose={() => setPickerVisible(false)} title={label}>
+        <SelectionDialog
+          visible={pickerVisible}
+          onClose={() => setPickerVisible(false)}
+          title={label}
+        >
           <DateTimePicker
             value={draftDate}
             mode="date"
@@ -96,7 +100,7 @@ export function ExpirationDateField({
               setPickerVisible(false);
             }}
           />
-        </BottomSheet>
+        </SelectionDialog>
       ) : null}
     </View>
   );
