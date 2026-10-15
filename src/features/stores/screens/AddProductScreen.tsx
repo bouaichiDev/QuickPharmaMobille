@@ -1,14 +1,14 @@
 import { useAccess } from '@/features/access/useAccess';
 import { can } from '@/features/crm/modules';
 import { SNote } from '@/features/catalogue/StockDesign';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { stockApi } from '@/features/catalogue/stockApi';
 import { useStockScope } from '@/features/catalogue/useStock';
 import { httpClient } from '@/services/api/client';
 import { productCreateFormData } from '../productsApi';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -29,6 +29,7 @@ import { errorMessage } from '@/utils/errorMessage';
 import { colors, fontFamilies, fontForScript, radii, spacing } from '@/theme';
 
 import { ExpirationDateField } from '../components/ExpirationDateField';
+import { ProductBarcodeScanner } from '../components/ProductBarcodeScanner';
 import type { ProductCreateInput } from '../productsApi';
 
 type Availability = 'inStock' | 'outOfStock';
@@ -321,6 +322,31 @@ export function AddProductScreen() {
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
   const [photoSourceSheetOpen, setPhotoSourceSheetOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (!editingId) setForm({ ...INITIAL_VALUES });
+        setProductPhotos([]);
+        setSubmitted(false);
+        setCategorySheetOpen(false);
+        setProviderSheetOpen(false);
+        setAvailabilitySheetOpen(false);
+        setPhotoSourceSheetOpen(false);
+        setScannerOpen(false);
+      };
+    }, [
+      editingId,
+      setForm,
+      setProductPhotos,
+      setSubmitted,
+      setCategorySheetOpen,
+      setProviderSheetOpen,
+      setAvailabilitySheetOpen,
+      setPhotoSourceSheetOpen,
+      setScannerOpen,
+    ]),
+  );
   const selectedCategory = categories.find((category) => category.id === form.categoryId);
   const selectedProvider = providers.find((provider) => provider.id === form.providerId);
   const nameError =
@@ -371,13 +397,6 @@ export function AddProductScreen() {
     } catch (error) {
       Alert.alert(t('mobile.products.form.saveErrorTitle'), errorMessage(error, { t, tDynamic }));
     }
-  }
-
-  function showFeatureUnavailable() {
-    Alert.alert(
-      t('mobile.products.form.featureUnavailableTitle'),
-      t('mobile.products.form.featureUnavailableMessage'),
-    );
   }
 
   async function chooseProductPhoto(source: 'camera' | 'library') {
@@ -443,6 +462,15 @@ export function AddProductScreen() {
 
   return (
     <Screen edges={['top']} keyboard contentStyle={styles.screenContent}>
+      {scannerOpen ? (
+        <ProductBarcodeScanner
+          onClose={() => setScannerOpen(false)}
+          onScan={(value) => {
+            updateField('sku', value);
+            setScannerOpen(false);
+          }}
+        />
+      ) : null}
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
@@ -492,7 +520,7 @@ export function AddProductScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            onPress={showFeatureUnavailable}
+            onPress={() => setScannerOpen(true)}
             style={styles.scanButton}
           >
             <Icon name="qr-code-scanner" size="sm" color="primary" />

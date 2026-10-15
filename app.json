@@ -38,10 +38,19 @@
       "expo-font",
       "expo-iap",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "QuickPharma uses the camera to scan barcodes and take product photos.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "QuickPharma needs access to select product photos.",
-          "cameraPermission": "QuickPharma uses the camera to take product photos.",
+          "cameraPermission": "QuickPharma uses the camera to scan barcodes and take product photos.",
           "microphonePermission": false
         }
       ],

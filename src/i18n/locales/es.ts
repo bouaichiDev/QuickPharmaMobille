@@ -180,6 +180,13 @@ export const es: TranslationDictionary = {
         skuPlaceholder: 'p. ej. 6111234567890',
         skuRequired: 'El SKU es obligatorio.',
         scan: 'Escanear',
+        scanTitle: 'Escanear código de barras',
+        scanHint: 'Apunte la cámara al código de barras del producto.',
+        scanPermission: 'Permita el acceso a la cámara para escanear códigos de barras.',
+        scanAllow: 'Permitir cámara',
+        scanSettings: 'Abrir ajustes',
+        scanError:
+          'No se pudo iniciar la cámara. Cierre el escáner e inténtelo de nuevo o introduzca el código manualmente.',
         description: 'Descripción del producto',
         descriptionPlaceholder: 'Detalles, dosis, formato (comprimido, jarabe...)',
         category: 'Categoría',
