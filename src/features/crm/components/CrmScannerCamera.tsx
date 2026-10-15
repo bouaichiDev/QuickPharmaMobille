@@ -13,7 +13,7 @@ export default function CrmScannerCamera({ onRead }: { onRead: (value: string) =
     />
   ) : (
     <View style={{ gap: 12 }}>
-      <AppText>Scannez un code pour rechercher le dossier correspondant.</AppText>
+      <AppText>Scannez le code que vous souhaitez rechercher.</AppText>
       <Button label="Autoriser la caméra" onPress={() => void requestPermission()} />
     </View>
   );

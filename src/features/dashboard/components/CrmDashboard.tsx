@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -206,7 +207,7 @@ export function CrmDashboardView({
   };
   const popular = data.popular_services.map(record);
   return (
-    <View style={{ gap: 12 }}>
+    <ResponsiveGrid maxColumns={2}>
       {showMoney ? (
         <CrmGradient style={styles.revenue}>
           <View style={crmStyles.row}>
@@ -278,7 +279,7 @@ export function CrmDashboardView({
           : null}
       </View>
       {shortcuts.length ? (
-        <>
+        <View style={{ gap: 12 }}>
           <View style={crmStyles.row}>
             <AppText variant="headlineSm" style={{ flex: 1 }}>
               Actions Rapides
@@ -322,10 +323,10 @@ export function CrmDashboardView({
               );
             })}
           </View>
-        </>
+        </View>
       ) : null}
       {appointments ? (
-        <>
+        <View style={{ gap: 12 }}>
           <View style={crmStyles.row}>
             <AppText variant="headlineSm" style={crmStyles.grow}>
               Rendez-vous du Jour
@@ -351,7 +352,7 @@ export function CrmDashboardView({
               <AppText color="outline">Aucun rendez-vous aujourd’hui.</AppText>
             </View>
           )}
-        </>
+        </View>
       ) : null}
       <View style={crmStyles.card}>
         <AppText variant="headlineSm">Services les plus utilisés</AppText>
@@ -397,7 +398,7 @@ export function CrmDashboardView({
           )}
         </View>
       ) : null}
-    </View>
+    </ResponsiveGrid>
   );
 }
 const styles = StyleSheet.create({

@@ -10,10 +10,12 @@ const cameraAvailable = Platform.OS !== 'web' && Boolean(requireOptionalNativeMo
 
 export function CrmScanner({
   visible,
+  title = 'Scanner un badge client',
   onClose,
   onRead,
 }: {
   visible: boolean;
+  title?: string;
   onClose: () => void;
   onRead: (value: string) => void;
 }) {
@@ -26,7 +28,7 @@ export function CrmScanner({
     onClose();
   };
   return (
-    <CrmPage visible={visible} title="Scanner un badge client" onClose={onClose}>
+    <CrmPage visible={visible} title={title} onClose={onClose}>
       {cameraAvailable ? (
         <Suspense fallback={<AppText>Chargement du scanner…</AppText>}>
           <ScannerCamera onRead={submit} />

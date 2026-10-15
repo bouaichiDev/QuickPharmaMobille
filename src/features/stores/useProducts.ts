@@ -12,7 +12,7 @@ export function useCreateProduct() {
   });
 }
 
-export function useProducts(filters: ProductFilters) {
+export function useProducts(filters: ProductFilters, enabled = true) {
   const storeId = useSessionStore((state) => state.session?.activeStore?.id ?? null);
 
   return useInfiniteQuery({
@@ -23,6 +23,6 @@ export function useProducts(filters: ProductFilters) {
       lastPage.meta.current_page < lastPage.meta.last_page
         ? lastPage.meta.current_page + 1
         : undefined,
-    enabled: !!storeId,
+    enabled: !!storeId && enabled,
   });
 }

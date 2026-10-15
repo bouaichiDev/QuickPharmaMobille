@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { canConvertAppointment, linkedAppointmentSession } from './appointmentSession';
 import { CrmReports } from './components/CrmReports';
 import { CrmDetailContent } from './components/CrmDetailContent';
@@ -374,7 +375,7 @@ function CrmModuleScreen() {
           />
         }
         contentStyle={styles.screenContent}
-        innerStyle={{ gap: 12 }}
+        innerStyle={{ gap: 12, maxWidth: undefined }}
       >
         <Stack.Screen options={{ headerShown: false }} />
         <StoreSwitcherSheet visible={switchStore} onClose={() => setSwitchStore(false)} />
@@ -397,7 +398,7 @@ function CrmModuleScreen() {
           onStore={currentStore.canSwitch ? () => setSwitchStore(true) : undefined}
         />
       }
-      innerStyle={{ gap: 12 }}
+      innerStyle={{ gap: 12, maxWidth: undefined }}
       contentStyle={styles.screenContent}
       onRefresh={() => void list.refetch()}
       refreshing={list.isRefetching}
@@ -591,54 +592,56 @@ function CrmModuleScreen() {
         <CrmReports data={record(list.data)} />
       ) : (
         <>
-          {pageData?.rows.map((row) => (
-            <CrmRecordCard
-              key={itemId(row)}
-              row={row}
-              module={module}
-              onEdit={
-                can(access.data, module.update)
-                  ? () => {
-                      setSelected(row);
-                      setForm('edit');
-                    }
-                  : undefined
-              }
-              onCollect={
-                ['sessions', 'packages'].includes(module.key) &&
-                can(access.data, 'services.payments.collect')
-                  ? () => {
-                      setSelected(row);
-                      setForm('payment');
-                    }
-                  : undefined
-              }
-              onDelete={
-                can(access.data, module.remove)
-                  ? () => {
-                      setSelected(row);
-                      setConfirm(true);
-                    }
-                  : undefined
-              }
-              onConvert={
-                module.key === 'appointments' &&
-                canConvertAppointment(row) &&
-                can(access.data, 'services.appointments.convert')
-                  ? () => action.mutate({ convert: row })
-                  : undefined
-              }
-              showMoney={
-                can(access.data, 'services.payments.view') ||
-                module.key === 'services' ||
-                module.key === 'service-packages'
-              }
-              onPress={() => {
-                setSelected(row);
-                action.reset();
-              }}
-            />
-          ))}
+          <ResponsiveGrid>
+            {pageData?.rows.map((row) => (
+              <CrmRecordCard
+                key={itemId(row)}
+                row={row}
+                module={module}
+                onEdit={
+                  can(access.data, module.update)
+                    ? () => {
+                        setSelected(row);
+                        setForm('edit');
+                      }
+                    : undefined
+                }
+                onCollect={
+                  ['sessions', 'packages'].includes(module.key) &&
+                  can(access.data, 'services.payments.collect')
+                    ? () => {
+                        setSelected(row);
+                        setForm('payment');
+                      }
+                    : undefined
+                }
+                onDelete={
+                  can(access.data, module.remove)
+                    ? () => {
+                        setSelected(row);
+                        setConfirm(true);
+                      }
+                    : undefined
+                }
+                onConvert={
+                  module.key === 'appointments' &&
+                  canConvertAppointment(row) &&
+                  can(access.data, 'services.appointments.convert')
+                    ? () => action.mutate({ convert: row })
+                    : undefined
+                }
+                showMoney={
+                  can(access.data, 'services.payments.view') ||
+                  module.key === 'services' ||
+                  module.key === 'service-packages'
+                }
+                onPress={() => {
+                  setSelected(row);
+                  action.reset();
+                }}
+              />
+            ))}
+          </ResponsiveGrid>
           {!pageData?.rows.length ? (
             <Card>
               <EmptyState

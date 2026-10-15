@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { CrmPrescription } from './CrmPrescription';
 import { ClientServiceCard } from './ClientServiceCard';
 import { Icon } from '@/components/ui/Icon';
@@ -238,54 +239,58 @@ export function ClientDossier({
               </AppText>
             </View>
           ) : null}
-          {query.data?.rows.map((row, index) => {
-            if (tab === 'prescriptions')
-              return (
-                <View key={itemId(row) || index} style={crmStyles.card}>
-                  <CrmPrescription customer={customer} session={row} />
-                </View>
-              );
-            if (tab === 'services') {
-              return (
-                <ClientServiceCard
-                  key={index}
-                  row={row}
-                  showMoney={permissions.money}
-                  onPrint={permissions.history ? () => print(String(row.service_id)) : undefined}
-                >
-                  <ClientPhotos clientId={id} serviceId={String(row.service_id)} />
-                </ClientServiceCard>
-              );
-            }
-            const module = crmModules.find((module) => module.key === tab)!;
-            return (
-              <View key={itemId(row) || index} style={{ gap: 10 }}>
-                <CrmRecordCard
-                  row={row}
-                  module={module}
-                  showMoney={permissions.money}
-                  onPress={() => navigate(`/crm/${tab}?record=${encodeURIComponent(itemId(row))}`)}
-                />
-                {tab === 'sessions' &&
-                Array.isArray(row.prescription) &&
-                row.prescription.length ? (
-                  <View style={crmStyles.card}>
+          <ResponsiveGrid>
+            {query.data?.rows.map((row, index) => {
+              if (tab === 'prescriptions')
+                return (
+                  <View key={itemId(row) || index} style={crmStyles.card}>
                     <CrmPrescription customer={customer} session={row} />
                   </View>
-                ) : null}
-                {tab === 'packages' && can(access.data, 'services.documents.view') ? (
-                  <View style={crmStyles.card}>
-                    <ClientPhotos
-                      collapsible
-                      clientId={id}
-                      packageId={itemId(row)}
-                      defaultServiceId={String(row.service_id ?? '')}
-                    />
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
+                );
+              if (tab === 'services') {
+                return (
+                  <ClientServiceCard
+                    key={index}
+                    row={row}
+                    showMoney={permissions.money}
+                    onPrint={permissions.history ? () => print(String(row.service_id)) : undefined}
+                  >
+                    <ClientPhotos clientId={id} serviceId={String(row.service_id)} />
+                  </ClientServiceCard>
+                );
+              }
+              const module = crmModules.find((module) => module.key === tab)!;
+              return (
+                <View key={itemId(row) || index} style={{ gap: 10 }}>
+                  <CrmRecordCard
+                    row={row}
+                    module={module}
+                    showMoney={permissions.money}
+                    onPress={() =>
+                      navigate(`/crm/${tab}?record=${encodeURIComponent(itemId(row))}`)
+                    }
+                  />
+                  {tab === 'sessions' &&
+                  Array.isArray(row.prescription) &&
+                  row.prescription.length ? (
+                    <View style={crmStyles.card}>
+                      <CrmPrescription customer={customer} session={row} />
+                    </View>
+                  ) : null}
+                  {tab === 'packages' && can(access.data, 'services.documents.view') ? (
+                    <View style={crmStyles.card}>
+                      <ClientPhotos
+                        collapsible
+                        clientId={id}
+                        packageId={itemId(row)}
+                        defaultServiceId={String(row.service_id ?? '')}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </ResponsiveGrid>
           {!query.data?.rows.length ? (
             <View style={crmStyles.card}>
               <AppText color="outline">Aucun élément dans cette rubrique.</AppText>
@@ -516,7 +521,7 @@ export function ClientOverview({
     ? profile.recent_appointments.map(record)
     : [];
   return (
-    <View style={crmStyles.stack}>
+    <ResponsiveGrid maxColumns={2}>
       {showHistory && appointments.length ? (
         <Pressable
           accessibilityRole="button"
@@ -585,7 +590,7 @@ export function ClientOverview({
         ))}
       </View>
       {showPackages ? (
-        <>
+        <View style={{ gap: 12 }}>
           <AppText variant="headlineSm">Forfaits actifs</AppText>
           {packages.length ? (
             packages.map((row) => (
@@ -602,10 +607,10 @@ export function ClientOverview({
               <AppText color="outline">Aucun forfait actif.</AppText>
             </View>
           )}
-        </>
+        </View>
       ) : null}
       {showHistory ? (
-        <>
+        <View style={{ gap: 12 }}>
           <AppText variant="headlineSm">Dernières séances</AppText>
           {sessions.length ? (
             sessions
@@ -629,8 +634,8 @@ export function ClientOverview({
             variant="tonal"
             onPress={() => onTab('sessions')}
           />
-        </>
+        </View>
       ) : null}
-    </View>
+    </ResponsiveGrid>
   );
 }

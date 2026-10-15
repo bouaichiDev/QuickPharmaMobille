@@ -89,7 +89,14 @@ export function StitchServiceCard({
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
         <Pressable
-          onPress={can(access.data, 'services.fields.manage') ? () => router.push(`/crm/form-builder?service=${encodeURIComponent(itemId(row))}` as Href) : onPress}
+          onPress={
+            can(access.data, 'services.fields.manage')
+              ? () =>
+                  router.push(
+                    `/crm/form-builder?service=${encodeURIComponent(itemId(row))}` as Href,
+                  )
+              : onPress
+          }
           accessibilityRole="button"
           accessibilityLabel="Champs supplémentaires du service"
           style={{ padding: 8 }}
