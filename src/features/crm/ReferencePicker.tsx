@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
@@ -128,39 +129,41 @@ export function ReferencePicker({
         ) : query.isLoading ? (
           <AppText>Chargement…</AppText>
         ) : (
-          rows
-            .filter(
-              (row) =>
-                field.key !== 'status_id' ||
-                !['completed', 'cancelled', 'no_show'].includes(String(row.code)) ||
-                can(
-                  access.data,
-                  row.code === 'completed'
-                    ? 'services.sessions.complete'
-                    : 'services.sessions.cancel',
-                ),
-            )
-            .map((row, index) => {
-              const label = referenceLabel(row, field.key);
-              return (
-                <View key={itemId(row)} style={{ gap: 8 }}>
-                  {field.key === 'employee_id' &&
-                  (index === 0 || userRole(rows[index - 1]!) !== userRole(row)) ? (
-                    <AppText variant="labelLg">{userRole(row)}</AppText>
-                  ) : null}
-                  <Button
-                    variant="tonal"
-                    label={label}
-                    onPress={() => {
-                      onChange(itemId(row));
-                      onSelect?.(row);
-                      setSelected(label);
-                      setVisible(false);
-                    }}
-                  />
-                </View>
-              );
-            })
+          <ResponsiveGrid>
+            {rows
+              .filter(
+                (row) =>
+                  field.key !== 'status_id' ||
+                  !['completed', 'cancelled', 'no_show'].includes(String(row.code)) ||
+                  can(
+                    access.data,
+                    row.code === 'completed'
+                      ? 'services.sessions.complete'
+                      : 'services.sessions.cancel',
+                  ),
+              )
+              .map((row, index) => {
+                const label = referenceLabel(row, field.key);
+                return (
+                  <View key={itemId(row)} style={{ gap: 8 }}>
+                    {field.key === 'employee_id' &&
+                    (index === 0 || userRole(rows[index - 1]!) !== userRole(row)) ? (
+                      <AppText variant="labelLg">{userRole(row)}</AppText>
+                    ) : null}
+                    <Button
+                      variant="tonal"
+                      label={label}
+                      onPress={() => {
+                        onChange(itemId(row));
+                        onSelect?.(row);
+                        setSelected(label);
+                        setVisible(false);
+                      }}
+                    />
+                  </View>
+                );
+              })}
+          </ResponsiveGrid>
         )}
         {!query.isLoading && !query.isError && !rows.length ? (
           <AppText>Aucun résultat.</AppText>

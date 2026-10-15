@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { statusLabels } from './CrmRecordCard';
 import { CrmColorPalette, CrmSessionCounter } from './CrmChoiceControls';
 import { Image, Switch, View } from 'react-native';
@@ -324,7 +325,7 @@ export function CrmFormFields({
     );
   }
   return (
-    <View style={crmStyles.stack}>
+    <ResponsiveGrid maxColumns={2}>
       {groups.map((group) => {
         const matches = group.keys
           .map((key) => fields.find((field) => field.key === key))
@@ -425,6 +426,6 @@ export function CrmFormFields({
           </CrmSection>
         ) : null;
       })}
-    </View>
+    </ResponsiveGrid>
   );
 }

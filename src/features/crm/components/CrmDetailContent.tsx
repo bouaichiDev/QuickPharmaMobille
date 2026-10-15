@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { CrmPrescription } from './CrmPrescription';
 import { View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -65,7 +66,7 @@ export function CrmDetailContent({
   const prescription = Array.isArray(row.prescription) ? row.prescription.map(record) : [];
   const zones = Array.isArray(row.treatment_zones) ? row.treatment_zones.map(String) : [];
   return (
-    <View style={crmStyles.stack}>
+    <ResponsiveGrid maxColumns={2}>
       <View style={crmStyles.card}>
         <View style={crmStyles.row}>
           {isCatalog ? (
@@ -244,6 +245,6 @@ export function CrmDetailContent({
           Créé le {formatDateTime(String(row.created_at), locale)}
         </AppText>
       ) : null}
-    </View>
+    </ResponsiveGrid>
   );
 }

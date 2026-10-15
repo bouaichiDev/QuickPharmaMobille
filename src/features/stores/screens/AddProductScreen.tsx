@@ -1,6 +1,14 @@
-import { useRouter } from 'expo-router';
+import { useAccess } from '@/features/access/useAccess';
+import { can } from '@/features/crm/modules';
+import { SNote } from '@/features/catalogue/StockDesign';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { stockApi } from '@/features/catalogue/stockApi';
+import { useStockScope } from '@/features/catalogue/useStock';
+import { httpClient } from '@/services/api/client';
+import { productCreateFormData } from '../productsApi';
 import * as ImagePicker from 'expo-image-picker';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -219,6 +227,53 @@ function FormField({
 
 export function AddProductScreen() {
   const router = useRouter();
+  const { id: editingId } = useLocalSearchParams<{ id?: string }>();
+  const scope = useStockScope();
+  const access = useAccess();
+  const showCost = can(access.data, 'products.view_purchase_price');
+  const queryClient = useQueryClient();
+  const editing = useQuery({
+    queryKey: ['stock-product', scope, Number(editingId)],
+    queryFn: ({ signal }) => stockApi.detail(Number(editingId), signal),
+    enabled: !!editingId && !!scope,
+  });
+  const updateProduct = useMutation({
+    mutationFn: async (input: ProductCreateInput) => {
+      if (!editing.data) throw new Error('Le produit doit �tre charg� avant sa modification.');
+      const raw = editing.data.product as unknown as Record<string, unknown>;
+      let photos: string[] = [];
+      try {
+        photos = Array.isArray(raw.images)
+          ? (raw.images as string[])
+          : JSON.parse(String(raw.images || '[]'));
+      } catch {
+        photos = [];
+      }
+      const body = productCreateFormData({
+        ...input,
+        description: input.description ?? '',
+        precautions: input.precautions ?? '',
+        interactions: input.interactions ?? '',
+        side_effects: input.side_effects ?? '',
+        images: photos.join(','),
+        status:
+          input.status === (Number(raw.status) === 9 ? '9' : '7')
+            ? String(raw.status)
+            : input.status,
+        quantity: String(raw.originalQuantity ?? raw.quantity ?? 0),
+      });
+      body.append('id', String(editingId));
+      const response = await httpClient.post('/product/update', body);
+      if (!response.data?.success)
+        throw new Error('La modification du produit n�a pas �t� confirm�e.');
+      await Promise.all(
+        ['products', 'catalogue', 'stock-product'].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      );
+      return { id: String(editingId) };
+    },
+  });
   const { t, tDynamic, locale } = useTranslation();
   const currency = useCurrency();
   const profileQuery = useProfile();
@@ -229,6 +284,37 @@ export function AddProductScreen() {
   const createProduct = useCreateProduct();
   const categories = categoriesQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const [form, setForm] = useState(INITIAL_VALUES);
+  useEffect(() => {
+    if (!editingId || !editing.data) return;
+    const frame = requestAnimationFrame(() => {
+      const p = editing.data.product as unknown as Record<string, unknown>;
+      const buy = Number(p.buyingPrice || 0),
+        sell = Number(p.sellingPrice || 0);
+      setForm({
+        ...INITIAL_VALUES,
+        productName: String(p.productName || ''),
+        sku: String(p.sku || ''),
+        description: String(p.description || ''),
+        categoryId: Number(p.categoryId) || null,
+        buyingPrice: String(buy),
+        taxRate: String(p.tax || 0),
+        taxIncluded: !!Number(p.includeTaxInPrice),
+        margin: String(buy ? (sell / buy - 1) * 100 : 0),
+        discount: String(p.discount || 0),
+        quantity: String(p.quantity || 0),
+        providerId: Number(p.providerId) || null,
+        minimumStock: String(p.minQuantity || 0),
+        availability: Number(p.status) === 9 ? 'outOfStock' : 'inStock',
+        expiryRequired: !!Number(p.hasExpiration),
+        usageInstructions: String(p.precautions || ''),
+        interactions: String(p.interactions || ''),
+        sideEffects: String(p.side_effects || ''),
+        prescriptionRequired: !!Number(p.requires_prescription),
+        active: !!Number(p.active),
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editingId, editing.data]);
   const [productPhotos, setProductPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
   const [providerSheetOpen, setProviderSheetOpen] = useState(false);
@@ -241,7 +327,10 @@ export function AddProductScreen() {
     submitted && !form.productName.trim() ? t('mobile.products.form.nameRequired') : undefined;
   const skuError =
     submitted && !form.sku.trim() ? t('mobile.products.form.skuRequired') : undefined;
-  const sellingPrice = calculateSellingPrice(form.buyingPrice, form.margin);
+  const sellingPrice =
+    editingId && Number(decimalValue(form.buyingPrice)) === 0
+      ? Number(editing.data?.product.sellingPrice ?? 0)
+      : calculateSellingPrice(form.buyingPrice, form.margin);
 
   function updateField<Key extends keyof ProductFormValues>(
     key: Key,
@@ -257,7 +346,7 @@ export function AddProductScreen() {
       Alert.alert(t('mobile.products.form.saveErrorTitle'), t('mobile.products.form.selectStatus'));
       return;
     }
-    if (Number(decimalValue(form.quantity)) > 0 && form.providerId === null) {
+    if (!editingId && Number(decimalValue(form.quantity)) > 0 && form.providerId === null) {
       Alert.alert(
         t('mobile.products.form.saveErrorTitle'),
         t('mobile.products.form.providerRequired'),
@@ -266,7 +355,7 @@ export function AddProductScreen() {
     }
 
     try {
-      const result = await createProduct.mutateAsync({
+      const result = await (editingId ? updateProduct : createProduct).mutateAsync({
         ...productCreateInputFrom(form, sellingPrice),
         files: productPhotos,
         createdBy: profileQuery.data?.id === undefined ? undefined : String(profileQuery.data.id),
@@ -368,7 +457,7 @@ export function AddProductScreen() {
             {t('mobile.products.form.headerLabel')}
           </AppText>
           <AppText variant="headlineSm" accessibilityRole="header">
-            {t('mobile.products.add')}
+            {editingId ? 'Modifier le produit' : t('mobile.products.add')}
           </AppText>
         </View>
       </View>
@@ -451,143 +540,155 @@ export function AddProductScreen() {
         </View>
       </FormSection>
 
-      <FormSection number="2" title={t('mobile.products.form.pricing')}>
-        <View style={styles.fieldRow}>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.buyingPrice')}
-              value={form.buyingPrice}
-              onChangeText={(value) => updateField('buyingPrice', value)}
-              keyboardType="decimal-pad"
-              suffix={currency ?? undefined}
-            />
-          </View>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.taxRate')}
-              value={form.taxRate}
-              onChangeText={(value) => updateField('taxRate', value)}
-              keyboardType="decimal-pad"
-              suffix="%"
-            />
-          </View>
-        </View>
-        <View style={styles.checkboxPanel}>
-          <Checkbox
-            checked={form.taxIncluded}
-            onChange={(value) => updateField('taxIncluded', value)}
-            label={t('mobile.products.form.taxIncluded')}
-          />
-        </View>
-        <View style={styles.fieldRow}>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.margin')}
-              value={form.margin}
-              onChangeText={(value) => updateField('margin', value)}
-              keyboardType="decimal-pad"
-              suffix="%"
-            />
-          </View>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.sellingPrice')}
-              value={formattedSellingPrice}
-              onChangeText={() => undefined}
-              editable={false}
-              suffix={currency ?? undefined}
-              helper={t('mobile.products.form.calculated')}
-            />
-          </View>
-        </View>
-        <FormField
-          label={t('mobile.products.form.discount')}
-          value={form.discount}
-          onChangeText={(value) => updateField('discount', value)}
-          keyboardType="decimal-pad"
-          suffix="%"
-        />
-        <View style={styles.fieldRow}>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.quantity')}
-              value={form.quantity}
-              onChangeText={(value) => updateField('quantity', value)}
-              keyboardType="numeric"
-              helper={t('mobile.products.form.initialQuantityHint')}
-            />
-          </View>
-          <View style={styles.flexField}>
-            <View style={styles.field}>
-              <AppText variant="labelSm">{t('mobile.products.form.supplier')}</AppText>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setProviderSheetOpen(true)}
-                style={styles.selectField}
-              >
-                <AppText
-                  variant="bodyMd"
-                  color={selectedProvider ? 'onSurface' : 'outline'}
-                  numberOfLines={1}
-                  style={styles.selectText}
-                >
-                  {selectedProvider?.name ?? t('mobile.products.form.chooseSupplier')}
-                </AppText>
-                <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
-              </Pressable>
+      {!editingId || showCost ? (
+        <FormSection number="2" title={t('mobile.products.form.pricing')}>
+          <View style={styles.fieldRow}>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.buyingPrice')}
+                value={form.buyingPrice}
+                onChangeText={(value) => updateField('buyingPrice', value)}
+                keyboardType="decimal-pad"
+                suffix={currency ?? undefined}
+              />
+            </View>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.taxRate')}
+                value={form.taxRate}
+                onChangeText={(value) => updateField('taxRate', value)}
+                keyboardType="decimal-pad"
+                suffix="%"
+              />
             </View>
           </View>
-        </View>
-        <View style={styles.fieldRow}>
-          <View style={styles.flexField}>
-            <FormField
-              label={t('mobile.products.form.minimumStock')}
-              value={form.minimumStock}
-              onChangeText={(value) => updateField('minimumStock', value)}
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={styles.flexField}>
-            <View style={styles.field}>
-              <AppText variant="labelSm">{t('mobile.products.form.availability')}</AppText>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setAvailabilitySheetOpen(true)}
-                style={styles.selectField}
-              >
-                <AppText variant="bodyMd" style={styles.selectText}>
-                  {form.availability === null
-                    ? t('mobile.products.form.selectStatus')
-                    : t(`mobile.products.form.${form.availability}`)}
-                </AppText>
-                <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-        <View style={styles.checkboxPanel}>
-          <View style={styles.checkboxCopy}>
+          <View style={styles.checkboxPanel}>
             <Checkbox
-              checked={form.expiryRequired}
-              onChange={(value) => updateField('expiryRequired', value)}
-              label={t('mobile.products.form.expiryRequired')}
+              checked={form.taxIncluded}
+              onChange={(value) => updateField('taxIncluded', value)}
+              label={t('mobile.products.form.taxIncluded')}
             />
-            <AppText variant="bodySm" color="onSurfaceVariant">
-              {t('mobile.products.form.expiryHint')}
-            </AppText>
           </View>
-        </View>
-        {form.expiryRequired ? (
-          <ExpirationDateField
-            label={t('mobile.products.form.expiryDate')}
-            locale={locale}
-            doneLabel={t('mobile.products.form.done')}
-            value={form.expiryDate}
-            onChange={(value) => updateField('expiryDate', value)}
-            placeholder={t('mobile.products.form.datePlaceholder')}
+          <View style={styles.fieldRow}>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.margin')}
+                value={form.margin}
+                onChangeText={(value) => updateField('margin', value)}
+                keyboardType="decimal-pad"
+                suffix="%"
+              />
+            </View>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.sellingPrice')}
+                value={formattedSellingPrice}
+                onChangeText={() => undefined}
+                editable={false}
+                suffix={currency ?? undefined}
+                helper={t('mobile.products.form.calculated')}
+              />
+            </View>
+          </View>
+          <FormField
+            label={t('mobile.products.form.discount')}
+            value={form.discount}
+            onChangeText={(value) => updateField('discount', value)}
+            keyboardType="decimal-pad"
+            suffix="%"
           />
-        ) : null}
-      </FormSection>
+          <View style={styles.fieldRow}>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.quantity')}
+                value={form.quantity}
+                onChangeText={(value) => updateField('quantity', value)}
+                editable={!editingId}
+                keyboardType="numeric"
+                helper={
+                  editingId
+                    ? 'Utilisez l’inventaire pour corriger les unités de stock.'
+                    : t('mobile.products.form.initialQuantityHint')
+                }
+              />
+            </View>
+            <View style={styles.flexField}>
+              <View style={styles.field}>
+                <AppText variant="labelSm">{t('mobile.products.form.supplier')}</AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setProviderSheetOpen(true)}
+                  style={styles.selectField}
+                >
+                  <AppText
+                    variant="bodyMd"
+                    color={selectedProvider ? 'onSurface' : 'outline'}
+                    numberOfLines={1}
+                    style={styles.selectText}
+                  >
+                    {selectedProvider?.name ?? t('mobile.products.form.chooseSupplier')}
+                  </AppText>
+                  <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+          <View style={styles.fieldRow}>
+            <View style={styles.flexField}>
+              <FormField
+                label={t('mobile.products.form.minimumStock')}
+                value={form.minimumStock}
+                onChangeText={(value) => updateField('minimumStock', value)}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.flexField}>
+              <View style={styles.field}>
+                <AppText variant="labelSm">{t('mobile.products.form.availability')}</AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setAvailabilitySheetOpen(true)}
+                  style={styles.selectField}
+                >
+                  <AppText variant="bodyMd" style={styles.selectText}>
+                    {form.availability === null
+                      ? t('mobile.products.form.selectStatus')
+                      : t(`mobile.products.form.${form.availability}`)}
+                  </AppText>
+                  <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+          <View style={styles.checkboxPanel}>
+            <View style={styles.checkboxCopy}>
+              <Checkbox
+                checked={form.expiryRequired}
+                onChange={(value) => updateField('expiryRequired', value)}
+                label={t('mobile.products.form.expiryRequired')}
+              />
+              <AppText variant="bodySm" color="onSurfaceVariant">
+                {t('mobile.products.form.expiryHint')}
+              </AppText>
+            </View>
+          </View>
+          {form.expiryRequired && !editingId ? (
+            <ExpirationDateField
+              label={t('mobile.products.form.expiryDate')}
+              locale={locale}
+              doneLabel={t('mobile.products.form.done')}
+              value={form.expiryDate}
+              onChange={(value) => updateField('expiryDate', value)}
+              placeholder={t('mobile.products.form.datePlaceholder')}
+            />
+          ) : null}
+        </FormSection>
+      ) : (
+        <SNote>
+          Les tarifs existants sont conservés. Votre rôle ne permet pas de consulter les prix
+          d’achat.
+        </SNote>
+      )}
 
       <FormSection
         number="+"
@@ -697,7 +798,8 @@ export function AddProductScreen() {
         <Button
           label={t('mobile.products.form.save')}
           icon="add"
-          loading={createProduct.isPending}
+          loading={createProduct.isPending || updateProduct.isPending}
+          disabled={!!editingId && !editing.data}
           onPress={() => void saveProduct()}
           style={styles.saveButton}
         />

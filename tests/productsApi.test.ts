@@ -183,4 +183,20 @@ describe('products API', () => {
 
     await expect(productsApi.list(1, {})).rejects.toBeInstanceOf(ApiError);
   });
+
+  it('uses live available stock including zero instead of a legacy receipt quantity', async () => {
+    const product = {
+      id: 5, productName: 'Produit test', sku: 'SKU-05', categoryId: 2,
+      active: 1, hasExpiration: 0, sellingPrice: 15,
+    };
+    get.mockResolvedValue({
+      data: [
+        { ...product, QteAvailable: '3' },
+        { ...product, id: 6, QteAvailable: 0, quantity: 9 },
+      ],
+      meta: { current_page: 1, last_page: 1, per_page: 15, total: 2 },
+    });
+    const result = await productsApi.list(1, {});
+    expect(result.data.map((row) => row.quantity)).toEqual([3, 0]);
+  });
 });

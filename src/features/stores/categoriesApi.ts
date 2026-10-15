@@ -1,5 +1,5 @@
 import { ApiError } from '@/services/api/apiError';
-import { apiGet } from '@/services/api/client';
+import { apiGet, apiPost } from '@/services/api/client';
 import { endpoints } from '@/services/api/endpoints';
 import { logger } from '@/utils/logger';
 
@@ -54,7 +54,49 @@ function isCategoryPage(value: unknown): value is CategoryPage {
   );
 }
 
+export interface CategoryInput {
+  code: string;
+  name: string;
+  description: string;
+  active: boolean;
+}
+export interface CategoryActivity {
+  documents: number;
+  units: number;
+  gross_amount: number | null;
+  recent: {
+    id: number;
+    ref: string;
+    date: string;
+    productName: string;
+    quantity: number;
+    gross_amount?: number;
+  }[];
+}
+export interface CategorySummary {
+  category: Category;
+  stock: { references_count: number; units: number; low_count: number } | null;
+  days: number;
+  from: string | null;
+  activity: {
+    sales: CategoryActivity | null;
+    entries: CategoryActivity | null;
+    orders: CategoryActivity | null;
+  };
+}
 export const categoriesApi = {
+  summary(id: number, days: number) {
+    return apiGet<CategorySummary>(`/mobile-stock/categories/${id}/summary`, { params: { days } });
+  },
+  async save(input: CategoryInput, id?: number): Promise<void> {
+    await apiPost(id ? '/category/update' : '/Addcategory', {
+      ...(id ? { id } : {}),
+      code: input.code.trim(),
+      name: input.name.trim(),
+      description: input.description.trim(),
+      active: input.active ? 'true' : 'false',
+    });
+  },
   async list(page: number, searchValue: string): Promise<CategoryPage> {
     const body = await apiGet<unknown>(endpoints.categories.list, {
       params: {

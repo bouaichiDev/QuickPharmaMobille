@@ -13,11 +13,11 @@ module.exports = ({ config }) => {
     slug: 'quickpharma',
     scheme: 'quickpharma',
     version: '1.0.2',
-    orientation: 'portrait',
+    orientation: 'default',
 
     ios: {
       ...config.ios,
-      supportsTablet: false,
+      supportsTablet: true,
       bundleIdentifier: androidPackage,
     },
 
@@ -27,6 +27,22 @@ module.exports = ({ config }) => {
       versionCode: 1,
       predictiveBackGestureEnabled: false,
     },
+
+    plugins: [
+      './plugins/withAndroidOptimization',
+      ...(config.plugins || []).filter(
+        (plugin) => (Array.isArray(plugin) ? plugin[0] : plugin) !== 'expo-build-properties',
+      ),
+      [
+        'expo-build-properties',
+        {
+          android: {
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true,
+          },
+        },
+      ],
+    ],
 
     extra: {
       ...config.extra,

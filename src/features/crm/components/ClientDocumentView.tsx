@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Badge } from '@/components/ui/Badge';
@@ -79,32 +80,34 @@ export function ClientDocumentView({
       <AppText variant="bodySm" color="outline">
         {sessions.length} séance{sessions.length > 1 ? 's' : ''}
       </AppText>
-      {sessions.map((session, index) => (
-        <View key={index} style={crmStyles.inset}>
-          <AppText variant="labelLg" color="primary">
-            {itemName(record(session.service)) || 'Séance'}
-          </AppText>
-          {session.session_date ? (
-            <AppText variant="bodySm" color="secondary">
-              {formatDateTime(String(session.session_date), locale)} ·{' '}
-              {String(session.duration_minutes ?? '')} min
+      <ResponsiveGrid>
+        {sessions.map((session, index) => (
+          <View key={index} style={crmStyles.inset}>
+            <AppText variant="labelLg" color="primary">
+              {itemName(record(session.service)) || 'Séance'}
             </AppText>
-          ) : null}
-          {itemName(record(session.employee)) ? (
-            <AppText variant="bodySm">Intervenant : {itemName(record(session.employee))}</AppText>
-          ) : null}
-          {session.observation ? (
-            <View style={[crmStyles.card, { padding: 10 }]}>
-              <AppText variant="bodySm">{String(session.observation)}</AppText>
-            </View>
-          ) : null}
-          {Array.isArray(session.treatment_zones) && session.treatment_zones.length ? (
-            <AppText variant="bodySm">
-              Zones : {session.treatment_zones.map(String).join(', ')}
-            </AppText>
-          ) : null}
-        </View>
-      ))}
+            {session.session_date ? (
+              <AppText variant="bodySm" color="secondary">
+                {formatDateTime(String(session.session_date), locale)} ·{' '}
+                {String(session.duration_minutes ?? '')} min
+              </AppText>
+            ) : null}
+            {itemName(record(session.employee)) ? (
+              <AppText variant="bodySm">Intervenant : {itemName(record(session.employee))}</AppText>
+            ) : null}
+            {session.observation ? (
+              <View style={[crmStyles.card, { padding: 10 }]}>
+                <AppText variant="bodySm">{String(session.observation)}</AppText>
+              </View>
+            ) : null}
+            {Array.isArray(session.treatment_zones) && session.treatment_zones.length ? (
+              <AppText variant="bodySm">
+                Zones : {session.treatment_zones.map(String).join(', ')}
+              </AppText>
+            ) : null}
+          </View>
+        ))}
+      </ResponsiveGrid>
       {!sessions.length ? (
         <AppText variant="bodySm" color="outline">
           Aucune séance à imprimer.
@@ -113,19 +116,21 @@ export function ClientDocumentView({
       {prescriptions.length ? (
         <>
           {heading('Prescriptions associées', 'receipt-long')}
-          {prescriptions.map((medicine, index) => (
-            <View key={index} style={crmStyles.inset}>
-              <AppText variant="labelLg">{String(medicine.name ?? '')}</AppText>
-              <AppText variant="bodySm">
-                {[medicine.dosage, medicine.frequency, medicine.duration]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </AppText>
-              {medicine.instructions ? (
-                <AppText variant="bodySm">{String(medicine.instructions)}</AppText>
-              ) : null}
-            </View>
-          ))}
+          <ResponsiveGrid>
+            {prescriptions.map((medicine, index) => (
+              <View key={index} style={crmStyles.inset}>
+                <AppText variant="labelLg">{String(medicine.name ?? '')}</AppText>
+                <AppText variant="bodySm">
+                  {[medicine.dosage, medicine.frequency, medicine.duration]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </AppText>
+                {medicine.instructions ? (
+                  <AppText variant="bodySm">{String(medicine.instructions)}</AppText>
+                ) : null}
+              </View>
+            ))}
+          </ResponsiveGrid>
         </>
       ) : null}
     </View>

@@ -179,7 +179,6 @@ export function CrmShellHeader({
             <Icon name="qr-code-scanner" size={21} color="outline" />
           </Pressable>
         ) : null}
-
       </View>
     </View>
   );

@@ -81,7 +81,7 @@ it('retains unsupported role menus as disabled entries in backend order', () => 
     }),
   );
   expect(groups[0]?.items.map((item) => [item.label, item.disabled, item.reason])).toEqual([
-    ['Ventes', true, 'À développer sur mobile'],
+    ['Ventes', true, 'Accès non autorisé'],
     ['Fournisseurs', true, 'À développer sur mobile'],
   ]);
 });
@@ -91,4 +91,56 @@ it('also shows a visible leaf with no route as awaiting mobile implementation', 
     backendMenuGroups(makeAccess({ menus: [menu({ route: null, label: 'Nouveau module' })] }))[0]
       ?.items[0],
   ).toMatchObject({ label: 'Nouveau module', disabled: true });
+});
+
+it('enables sales only when the login menu and permission both allow it', () => {
+  expect(
+    backendMenuGroups(
+      makeAccess({
+        permissions: ['sales.view'],
+        menus: [menu({ route: '/sales', label: 'Sales' })],
+      }),
+    )[0]?.items[0],
+  ).toMatchObject({ href: '/sales', label: 'Ventes' });
+  expect(
+    backendMenuGroups(
+      makeAccess({
+        permissions: ['sales.create'],
+        menus: [menu({ route: '/sales/add', label: 'Sales' })],
+      }),
+    )[0]?.items[0],
+  ).toMatchObject({ href: '/sales?action=create' });
+});
+
+it('adds the requested locations shortcut only with the backend permission and avoids duplicates', () => {
+  const permission = { permissions: ['stock.locations.manage'] };
+  expect(
+    backendMenuGroups(makeAccess(permission))
+      .flatMap((g) => g.items)
+      .filter((i) => i.href === '/stock?panel=locations'),
+  ).toHaveLength(1);
+  expect(
+    backendMenuGroups(makeAccess({ permissions: [] }))
+      .flatMap((g) => g.items)
+      .filter((i) => i.href === '/stock?panel=locations'),
+  ).toHaveLength(0);
+  expect(
+    backendMenuGroups(
+      makeAccess({ ...permission, menus: [menu({ route: '/locations', label: 'Emplacements' })] }),
+    )
+      .flatMap((g) => g.items)
+      .filter((i) => i.href === '/stock?panel=locations'),
+  ).toHaveLength(1);
+});
+
+it('exposes locations to a stock reader without granting management rights', () => {
+  for (const permission of ['products.view', 'stock.view']) {
+    const items = backendMenuGroups(makeAccess({ permissions: [permission], menus: [] })).flatMap(
+      (g) => g.items,
+    );
+    expect(items.find((i) => i.href === '/stock?panel=locations')).toMatchObject({
+      label: 'Emplacements',
+    });
+    expect(items.find((i) => i.href === '/stock?panel=locations')?.disabled).not.toBe(true);
+  }
 });

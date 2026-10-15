@@ -83,12 +83,16 @@ export function CrmPage({
   onClose,
   footer,
   children,
+  scroll = true,
+  header,
 }: {
   visible: boolean;
   title: string;
   onClose: () => void;
   footer?: ReactNode;
   children: ReactNode;
+  scroll?: boolean;
+  header?: ReactNode;
 }) {
   const layers = usePageLayers();
   const id = useId();
@@ -100,36 +104,46 @@ export function CrmPage({
       <NavigationContext.Provider value={navigation}>
         <NavigationRouteContext.Provider value={route}>
           <SafeAreaView edges={['top']} style={styles.root}>
-            <View style={styles.header}>
-              <Pressable
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel="Retour"
-                style={styles.back}
-              >
-                <Icon name="arrow-back" color="primary" />
-              </Pressable>
-              <AppText variant="headlineSm" numberOfLines={1} style={crmStyles.grow}>
-                {title}
-              </AppText>
-            </View>
+            {header ?? (
+              <View style={styles.header}>
+                <Pressable
+                  onPress={onClose}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retour"
+                  style={styles.back}
+                >
+                  <Icon name="arrow-back" color="primary" />
+                </Pressable>
+                <AppText variant="headlineSm" numberOfLines={1} style={crmStyles.grow}>
+                  {title}
+                </AppText>
+              </View>
+            )}
             <KeyboardAvoidingView
               style={styles.root}
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.content}
-              >
-                {children}
-              </ScrollView>
-              {footer ? <View style={styles.footer}>{footer}</View> : null}
+              {scroll ? (
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={styles.content}
+                >
+                  {children}
+                </ScrollView>
+              ) : (
+                <View style={{ flex: 1 }}>{children}</View>
+              )}
+              {footer ? (
+                <View style={styles.footer}>
+                  <View style={styles.footerContent}>{footer}</View>
+                </View>
+              ) : null}
             </KeyboardAvoidingView>
           </SafeAreaView>
         </NavigationRouteContext.Provider>
       </NavigationContext.Provider>
     ),
-    [children, footer, title, onClose, navigation, route],
+    [children, footer, title, onClose, navigation, route, scroll, header],
   );
   useEffect(() => {
     if (visible && focused) layers?.update(id, content, onClose);
@@ -157,16 +171,22 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 32,
     width: '100%',
-    maxWidth: 600,
     alignSelf: 'center',
   },
   footer: {
     padding: 12,
     gap: 8,
     flexDirection: 'row',
+    justifyContent: 'center',
     borderTopWidth: 1,
     borderTopColor: '#edf0f8',
     backgroundColor: colors.surface,
+  },
+  footerContent: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   avatar: {
     width: 44,

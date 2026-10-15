@@ -1,9 +1,10 @@
 import { ApiError } from '@/services/api/apiError';
-import { apiGet } from '@/services/api/client';
+import { apiGet, apiPost } from '@/services/api/client';
 import { categoriesApi } from '@/features/stores/categoriesApi';
 
 jest.mock('@/services/api/client', () => ({
   apiGet: jest.fn(),
+  apiPost: jest.fn(),
 }));
 
 const get = apiGet as jest.MockedFunction<typeof apiGet>;
@@ -49,5 +50,34 @@ describe('categories API', () => {
     get.mockResolvedValue({ data: [] });
 
     await expect(categoriesApi.list(1, '')).rejects.toBeInstanceOf(ApiError);
+  });
+});
+it('creates a category using the Laravel active string contract', async () => {
+  const post = apiPost as jest.Mock;
+  post.mockResolvedValue({ success: 'ok' });
+  await categoriesApi.save({
+    name: ' Soins ',
+    code: ' S01 ',
+    description: ' Description ',
+    active: true,
+  });
+  expect(post).toHaveBeenLastCalledWith('/Addcategory', {
+    name: 'Soins',
+    code: 'S01',
+    description: 'Description',
+    active: 'true',
+  });
+});
+it('updates the selected category rather than creating another', async () => {
+  await categoriesApi.save(
+    { name: 'Soins', code: 'S01', description: 'Description', active: false },
+    4,
+  );
+  expect(apiPost).toHaveBeenLastCalledWith('/category/update', {
+    id: 4,
+    name: 'Soins',
+    code: 'S01',
+    description: 'Description',
+    active: 'false',
   });
 });

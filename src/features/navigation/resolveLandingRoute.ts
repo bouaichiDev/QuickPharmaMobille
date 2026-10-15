@@ -11,6 +11,9 @@ export function resolveLandingRoute(defaultRoute?: string | null): string {
     if (module) return `/crm/${module.key}`;
   }
   const routes: Record<string, string> = {
+    '/sales': '/sales',
+    '/sales/add': '/sales?action=create',
+    '/pos': '/sales?action=create',
     '/products': '/stock',
     '/stock': '/stock',
     '/categories': '/categories',

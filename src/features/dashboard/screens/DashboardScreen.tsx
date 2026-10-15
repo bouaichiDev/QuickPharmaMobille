@@ -45,7 +45,12 @@ export function DashboardScreen() {
     : null;
 
   return (
-    <Screen edges={[]} refreshing={refreshing} onRefresh={() => void refresh()}>
+    <Screen
+      innerStyle={kind === 'crm' ? { maxWidth: undefined } : undefined}
+      edges={[]}
+      refreshing={refreshing}
+      onRefresh={() => void refresh()}
+    >
       <View style={styles.heading}>
         <AppText variant="bodyMd" color="onSurfaceVariant">
           {t('mobile.dashboard.greeting')} {displayName(profile.data, '')}

@@ -42,8 +42,13 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
         denied: !can(access, 'platform.metrics.view'),
       };
     const pharmacy: Record<string, [string, IconName, string]> = {
+      '/sales': ['/sales', 'point-of-sale', 'sales.view'],
+      '/sales/add': ['/sales?action=create', 'point-of-sale', 'sales.create'],
+      '/pos': ['/sales?action=create', 'point-of-sale', 'sales.create'],
       '/products': ['/stock', 'inventory-2', 'products.view'],
       '/stock': ['/stock', 'inventory-2', 'products.view'],
+      '/inventory': ['/stock?panel=inventory', 'fact-check', 'stock.view'],
+      '/locations': ['/stock?panel=locations', 'place', 'stock.locations.manage'],
       '/product': ['/stock', 'inventory-2', 'products.view'],
       '/plans': ['/plans', 'workspace-premium', 'subscription.view'],
       '/plans/selection': ['/plans', 'workspace-premium', 'subscription.view'],
@@ -55,13 +60,23 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
       ? {
           href: target[0],
           icon: target[1],
-          fallback:
-            target[0] === '/stock'
+          fallback: target[0].startsWith('/sales')
+            ? 'Ventes'
+            : target[0] === '/stock'
               ? 'Stock'
-              : target[0] === '/plans'
-                ? 'Abonnements'
-                : 'Catégories',
-          denied: !can(access, target[2]),
+              : target[0] === '/stock?panel=inventory'
+                ? 'Inventaire'
+                : target[0] === '/stock?panel=locations'
+                  ? 'Emplacements'
+                  : target[0] === '/plans'
+                    ? 'Abonnements'
+                    : 'Catégories',
+          denied:
+            path === '/locations'
+              ? !['products.view', 'stock.view', 'stock.locations.manage'].some((permission) =>
+                  can(access, permission),
+                )
+              : !can(access, target[2]),
         }
       : undefined;
   }
@@ -120,5 +135,20 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
     }
   }
   visit(menus, 'Modules');
+  if (
+    ['products.view', 'stock.view', 'stock.locations.manage'].some((permission) =>
+      can(access, permission),
+    ) &&
+    !groups.some((g) => g.items.some((i) => i.href === '/stock?panel=locations'))
+  ) {
+    const stockGroup = groups.find((g) => g.items.some((i) => i.href === '/stock'));
+    const item: MobileMenuItem = {
+      label: 'Emplacements',
+      icon: 'place',
+      href: '/stock?panel=locations',
+    };
+    if (stockGroup) stockGroup.items.push(item);
+    else groups.push({ title: 'Stock', items: [item] });
+  }
   return groups;
 }

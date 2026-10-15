@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { ScrollView, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { useCurrency } from '@/features/settings/settingsApi';
@@ -7,6 +9,7 @@ import { record, type CrmRecord } from '../crmApi';
 import { CrmSection, crmStyles } from './CrmDesign';
 
 export function CrmReports({ data }: { data: CrmRecord }) {
+  const [chartWidth, setChartWidth] = useState(0);
   const currency = useCurrency();
   const { locale } = useTranslation();
   const rows = (key: string) =>
@@ -18,7 +21,7 @@ export function CrmReports({ data }: { data: CrmRecord }) {
   const growth = record(data.client_growth);
   const appointments = rows('appointments');
   return (
-    <View style={{ gap: 14 }}>
+    <ResponsiveGrid maxColumns={2}>
       <View
         style={[crmStyles.card, { backgroundColor: '#00417c', borderColor: '#00417c', gap: 8 }]}
       >
@@ -33,13 +36,24 @@ export function CrmReports({ data }: { data: CrmRecord }) {
         </AppText>
       </View>
       <CrmSection title="Évolution des recettes" icon="bar-chart">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onLayout={(event) => setChartWidth(event.nativeEvent.layout.width)}
+        >
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-end', paddingTop: 8 }}>
             {revenue.map((row, index) => (
               <View
                 key={index}
                 accessibilityLabel={`${row.name} : ${money(row.revenue)}`}
-                style={{ width: 48, alignItems: 'center', gap: 6 }}
+                style={{
+                  width: Math.max(
+                    48,
+                    (chartWidth - 12 * (revenue.length - 1)) / Math.max(1, revenue.length),
+                  ),
+                  alignItems: 'center',
+                  gap: 6,
+                }}
               >
                 <AppText variant="labelSm" color="primary">
                   {Number(row.revenue) || '0'}
@@ -144,6 +158,6 @@ export function CrmReports({ data }: { data: CrmRecord }) {
           </View>
         ))}
       </CrmSection>
-    </View>
+    </ResponsiveGrid>
   );
 }

@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
 import { customDefault } from './dynamicFields';
 import { CrmDynamicField } from './components/CrmDynamicField';
 import { CrmSessionCounter } from './components/CrmChoiceControls';
@@ -406,87 +407,94 @@ export function CrmForm({
         </AppText>
       ) : null}
       {module.key === 'sessions' && !payment ? (
-        <View style={{ gap: 16 }} pointerEvents={hasSavedSession ? 'none' : 'auto'}>
-          <CrmSection title="6. Prescription" icon="receipt-long">
-            {prescription.map((line, index) => (
-              <View key={index} style={crmStyles.inset}>
-                {(['name', 'dosage', 'frequency', 'duration', 'instructions'] as const).map(
-                  (key) => (
-                    <TextField
-                      appearance="crm"
-                      key={key}
-                      label={
-                        {
-                          name: 'Médicament',
-                          dosage: 'Dosage',
-                          frequency: 'Fréquence',
-                          duration: 'Durée',
-                          instructions: 'Instructions',
-                        }[key]
-                      }
-                      value={String(line[key] ?? '')}
-                      onChangeText={(value) =>
-                        setPrescription((old) =>
-                          old.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
-                        )
-                      }
-                    />
-                  ),
-                )}
-                <Button
-                  label="Retirer ce médicament"
-                  variant="dangerSoft"
-                  onPress={() => setPrescription((old) => old.filter((_, i) => i !== index))}
-                />
-              </View>
-            ))}
-            <Button
-              label="Ajouter un médicament"
-              variant="tonal"
-              onPress={() =>
-                setPrescription((old) => [
-                  ...old,
-                  { name: '', dosage: '', frequency: '', duration: '', instructions: '' },
-                ])
-              }
-            />
-          </CrmSection>
-          <CrmSection title="7. Diagnostic du soin" icon="tune">
-            {customFields.isError ? (
-              <ErrorState error={customFields.error} onRetry={() => void customFields.refetch()} />
-            ) : (
-              (customFields.data ?? [])
-                .filter((field) => field.visible !== false && field.visible !== 0)
-                .map((field) => {
-                  const id = itemId(field);
-                  return (
-                    <CrmDynamicField
-                      key={id}
-                      field={field}
-                      value={customValues[id]}
-                      onChange={(value) => setCustomValues((old) => ({ ...old, [id]: value }))}
-                    />
-                  );
-                })
-            )}
-          </CrmSection>
-          {can(access.data, 'services.documents.manage') ||
-          (row && can(access.data, 'services.documents.view')) ? (
-            <CrmSection title="8. Photos Avant / Après" icon="photo-camera">
-              {row?.customer_id ? (
-                <ClientPhotos
-                  clientId={String(row.customer_id)}
-                  serviceId={String(values.service_id ?? '')}
-                  packageId={String(values.customer_service_package_id || '') || undefined}
-                  sessionId={itemId(row)}
+        <View pointerEvents={hasSavedSession ? 'none' : 'auto'}>
+          <ResponsiveGrid maxColumns={2}>
+            <CrmSection title="6. Prescription" icon="receipt-long">
+              {prescription.map((line, index) => (
+                <View key={index} style={crmStyles.inset}>
+                  {(['name', 'dosage', 'frequency', 'duration', 'instructions'] as const).map(
+                    (key) => (
+                      <TextField
+                        appearance="crm"
+                        key={key}
+                        label={
+                          {
+                            name: 'Médicament',
+                            dosage: 'Dosage',
+                            frequency: 'Fréquence',
+                            duration: 'Durée',
+                            instructions: 'Instructions',
+                          }[key]
+                        }
+                        value={String(line[key] ?? '')}
+                        onChangeText={(value) =>
+                          setPrescription((old) =>
+                            old.map((entry, i) =>
+                              i === index ? { ...entry, [key]: value } : entry,
+                            ),
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                  <Button
+                    label="Retirer ce médicament"
+                    variant="dangerSoft"
+                    onPress={() => setPrescription((old) => old.filter((_, i) => i !== index))}
+                  />
+                </View>
+              ))}
+              <Button
+                label="Ajouter un médicament"
+                variant="tonal"
+                onPress={() =>
+                  setPrescription((old) => [
+                    ...old,
+                    { name: '', dosage: '', frequency: '', duration: '', instructions: '' },
+                  ])
+                }
+              />
+            </CrmSection>
+            <CrmSection title="7. Diagnostic du soin" icon="tune">
+              {customFields.isError ? (
+                <ErrorState
+                  error={customFields.error}
+                  onRetry={() => void customFields.refetch()}
                 />
               ) : (
-                <View pointerEvents={hasSavedSession ? 'none' : 'auto'}>
-                  <DraftSessionPhotos value={photos} onChange={setPhotos} />
-                </View>
+                (customFields.data ?? [])
+                  .filter((field) => field.visible !== false && field.visible !== 0)
+                  .map((field) => {
+                    const id = itemId(field);
+                    return (
+                      <CrmDynamicField
+                        key={id}
+                        field={field}
+                        value={customValues[id]}
+                        onChange={(value) => setCustomValues((old) => ({ ...old, [id]: value }))}
+                      />
+                    );
+                  })
               )}
             </CrmSection>
-          ) : null}
+            {can(access.data, 'services.documents.manage') ||
+            (row && can(access.data, 'services.documents.view')) ? (
+              <CrmSection title="8. Photos Avant / Après" icon="photo-camera">
+                {row?.customer_id ? (
+                  <ClientPhotos
+                    clientId={String(row.customer_id)}
+                    serviceId={String(values.service_id ?? '')}
+                    packageId={String(values.customer_service_package_id || '') || undefined}
+                    sessionId={itemId(row)}
+                  />
+                ) : (
+                  <View pointerEvents={hasSavedSession ? 'none' : 'auto'}>
+                    <DraftSessionPhotos value={photos} onChange={setPhotos} />
+                  </View>
+                )}
+              </CrmSection>
+            ) : null}
+          </ResponsiveGrid>
         </View>
       ) : null}
       {module.key === 'service-packages' ? (
