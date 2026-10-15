@@ -184,6 +184,13 @@ export const fr = {
         skuPlaceholder: 'ex. 6111234567890',
         skuRequired: 'Le code SKU est requis.',
         scan: 'Scanner',
+        scanTitle: 'Scanner un code-barres',
+        scanHint: 'Pointez la caméra vers le code-barres du produit.',
+        scanPermission: 'Autorisez la caméra pour scanner les codes-barres des produits.',
+        scanAllow: 'Autoriser la caméra',
+        scanSettings: 'Ouvrir les paramètres',
+        scanError:
+          'La caméra ne peut pas démarrer. Fermez le scanner et réessayez, ou saisissez le code-barres manuellement.',
         description: 'Description du produit',
         descriptionPlaceholder: 'Description commerciale, dosage, forme (comprimé, sirop...)',
         category: 'Catégorie',
