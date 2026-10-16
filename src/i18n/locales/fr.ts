@@ -184,6 +184,7 @@ export const fr = {
         skuPlaceholder: 'ex. 6111234567890',
         skuRequired: 'Le code SKU est requis.',
         scan: 'Scanner',
+        fillTestData: 'Remplir les données de test',
         scanTitle: 'Scanner un code-barres',
         scanHint: 'Pointez la caméra vers le code-barres du produit.',
         scanPermission: 'Autorisez la caméra pour scanner les codes-barres des produits.',
