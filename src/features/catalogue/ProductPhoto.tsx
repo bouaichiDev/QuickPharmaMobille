@@ -2,12 +2,13 @@ import { useContext, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { useSessionStore } from '@/features/auth/sessionStore';
-import { config } from '@/constants/config';
+import { useQuery } from '@tanstack/react-query';
+import { loadAuthenticatedImage } from '@/services/api/loadAuthenticatedImage';
 import { StockContext } from './StockContext';
 import type { StockProduct } from './stockApi';
 export function ProductPhoto({ product, size = 64 }: { product: StockProduct; size?: number }) {
   const preview = useContext(StockContext);
-  const token = useSessionStore((s) => s.session?.token);
+  const session = useSessionStore((s) => s.session);
   const [failedSource, setFailedSource] = useState<string>();
   let filename = '';
   try {
@@ -19,6 +20,14 @@ export function ProductPhoto({ product, size = 64 }: { product: StockProduct; si
   const path = filename.startsWith('products/')
     ? filename
     : `products/${product.id}/profile/${filename}`;
+  const photo = useQuery({
+    queryKey: ['product-photo', session?.userId, session?.activeStore?.id, path],
+    queryFn: ({ signal }) => loadAuthenticatedImage(path, signal),
+    enabled: !!filename && !!session?.token && !preview,
+    retry: false,
+    staleTime: Infinity,
+    gcTime: 0,
+  });
   const style = { width: size, height: size, borderRadius: 10, backgroundColor: '#eff4ff' };
   if (preview && product.id === 1)
     return (
@@ -35,16 +44,13 @@ export function ProductPhoto({ product, size = 64 }: { product: StockProduct; si
   };
   if (preview && previewPhotos[product.id])
     return <Image source={previewPhotos[product.id]} style={style} resizeMode="cover" />;
-  if (filename && failedSource !== filename)
+  if (photo.data && failedSource !== photo.data)
     return (
       <Image
-        source={{
-          uri: config.apiBaseUrl + '/images?filename=' + encodeURIComponent(path),
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }}
+        source={{ uri: photo.data }}
         style={style}
         resizeMode="contain"
-        onError={() => setFailedSource(filename)}
+        onError={() => setFailedSource(photo.data)}
       />
     );
   return (

@@ -1,5 +1,6 @@
 import { useAccess } from '@/features/access/useAccess';
 import { can } from '@/features/crm/modules';
+import { ProductPhoto } from '@/features/catalogue/ProductPhoto';
 import { SNote } from '@/features/catalogue/StockDesign';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,8 +9,18 @@ import { useStockScope } from '@/features/catalogue/useStock';
 import { httpClient } from '@/services/api/client';
 import { productCreateFormData } from '../productsApi';
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Keyboard, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  BackHandler,
+  Keyboard,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AppText, useLatinFonts } from '@/components/ui/AppText';
@@ -34,6 +45,26 @@ import { ProductBarcodeScanner } from '../components/ProductBarcodeScanner';
 import type { ProductCreateInput } from '../productsApi';
 
 type Availability = 'inStock' | 'outOfStock';
+
+function existingPhotoNames(images?: string): string[] {
+  if (!images) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(images);
+  } catch {
+    parsed = images;
+  }
+  const entries = Array.isArray(parsed) ? parsed : [parsed];
+  return entries.flatMap((entry: unknown) => {
+    const name =
+      typeof entry === 'string'
+        ? entry
+        : entry && typeof entry === 'object' && 'name' in entry
+          ? entry.name
+          : undefined;
+    return typeof name === 'string' && name.trim() ? [name] : [];
+  });
+}
 
 const MAX_PRODUCT_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -229,6 +260,7 @@ function FormField({
 
 export function AddProductScreen() {
   const router = useRouter();
+  const returnToProducts = useCallback(() => router.navigate('/stock'), [router]);
   const { id: editingId } = useLocalSearchParams<{ id?: string }>();
   const scope = useStockScope();
   const access = useAccess();
@@ -242,24 +274,35 @@ export function AddProductScreen() {
   const updateProduct = useMutation({
     mutationFn: async (input: ProductCreateInput) => {
       if (!editing.data) throw new Error('Le produit doit �tre charg� avant sa modification.');
-      const raw = editing.data.product as unknown as Record<string, unknown>;
-      let photos: string[] = [];
-      try {
-        photos = Array.isArray(raw.images)
-          ? (raw.images as string[])
-          : JSON.parse(String(raw.images || '[]'));
-      } catch {
-        photos = [];
+      const raw = editing.data.product;
+      const fields = { ...input };
+      delete fields.date_expiration;
+      delete fields.date;
+      // Purchase prices and margins may be masked by the API for this role.
+      if (!showCost) {
+        for (const key of [
+          'buyingPrice',
+          'sellingPrice',
+          'profitMargin',
+          'tax',
+          'includeTaxInPrice',
+          'discount',
+          'providerId',
+          'minQuantity',
+          'hasExpiration',
+        ] as const) {
+          delete fields[key];
+        }
       }
       const body = productCreateFormData({
-        ...input,
+        ...fields,
         description: input.description ?? '',
         precautions: input.precautions ?? '',
         interactions: input.interactions ?? '',
         side_effects: input.side_effects ?? '',
-        images: photos.join(','),
+        images: retainedPhotos.join(','),
         status:
-          input.status === (Number(raw.status) === 9 ? '9' : '7')
+          raw.status != null && input.status === (Number(raw.status) === 9 ? '9' : '7')
             ? String(raw.status)
             : input.status,
         quantity: String(raw.originalQuantity ?? raw.quantity ?? 0),
@@ -285,11 +328,31 @@ export function AddProductScreen() {
   const providers = providersQuery.data ?? [];
   const createProduct = useCreateProduct();
   const categories = categoriesQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const [productPhotos, setProductPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [form, setForm] = useState(INITIAL_VALUES);
+  const [retainedPhotos, setRetainedPhotos] = useState<string[]>([]);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+  const initializedKey = useRef<string | null>(null);
+  const editKey = editingId ? scope + ':' + editingId : null;
+  const [priceChanged, setPriceChanged] = useState(false);
+  const [savedSellingPrice, setSavedSellingPrice] = useState(0);
   useEffect(() => {
-    if (!editingId || !editing.data) return;
+    if (!editingId) {
+      if (initializedKey.current === null) return;
+      const frame = requestAnimationFrame(() => {
+        setForm({ ...INITIAL_VALUES });
+        setRetainedPhotos([]);
+        setProductPhotos([]);
+        setPriceChanged(false);
+        setSavedSellingPrice(0);
+        initializedKey.current = null;
+        setHydratedKey(null);
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    if (!editing.data || initializedKey.current === editKey) return;
     const frame = requestAnimationFrame(() => {
-      const p = editing.data.product as unknown as Record<string, unknown>;
+      const p = editing.data.product;
       const buy = Number(p.buyingPrice || 0),
         sell = Number(p.sellingPrice || 0);
       setForm({
@@ -301,23 +364,40 @@ export function AddProductScreen() {
         buyingPrice: String(buy),
         taxRate: String(p.tax || 0),
         taxIncluded: !!Number(p.includeTaxInPrice),
-        margin: String(buy ? (sell / buy - 1) * 100 : 0),
+        margin: String(p.profitMargin ?? (buy ? (sell / buy - 1) * 100 : 0)),
         discount: String(p.discount || 0),
         quantity: String(p.quantity || 0),
         providerId: Number(p.providerId) || null,
         minimumStock: String(p.minQuantity || 0),
         availability: Number(p.status) === 9 ? 'outOfStock' : 'inStock',
         expiryRequired: !!Number(p.hasExpiration),
+        expiryDate: String(p.date_expiration ?? p.expiry ?? '').slice(0, 10),
         usageInstructions: String(p.precautions || ''),
         interactions: String(p.interactions || ''),
         sideEffects: String(p.side_effects || ''),
         prescriptionRequired: !!Number(p.requires_prescription),
         active: !!Number(p.active),
       });
+      setRetainedPhotos(existingPhotoNames(p.images));
+      setProductPhotos([]);
+      setPriceChanged(false);
+      setSavedSellingPrice(sell);
+      initializedKey.current = editKey;
+      setHydratedKey(editKey);
     });
     return () => cancelAnimationFrame(frame);
-  }, [editingId, editing.data]);
-  const [productPhotos, setProductPhotos] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  }, [editingId, editing.data, editKey]);
+  const {
+    hasNextPage: hasMoreCategories,
+    isFetchingNextPage: fetchingCategories,
+    isError: categoriesFailed,
+    fetchNextPage: fetchMoreCategories,
+  } = categoriesQuery;
+  useEffect(() => {
+    if (hasMoreCategories && !fetchingCategories && !categoriesFailed) {
+      void fetchMoreCategories();
+    }
+  }, [hasMoreCategories, fetchingCategories, categoriesFailed, fetchMoreCategories]);
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
   const [providerSheetOpen, setProviderSheetOpen] = useState(false);
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
@@ -327,7 +407,12 @@ export function AddProductScreen() {
   const [alert, setAlert] = useState<AlertDialogState | null>(null);
   useFocusEffect(
     useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        returnToProducts();
+        return true;
+      });
       return () => {
+        subscription.remove();
         if (!editingId) setForm({ ...INITIAL_VALUES });
         setProductPhotos([]);
         setSubmitted(false);
@@ -339,6 +424,7 @@ export function AddProductScreen() {
         setAlert(null);
       };
     }, [
+      returnToProducts,
       editingId,
       setForm,
       setProductPhotos,
@@ -358,14 +444,15 @@ export function AddProductScreen() {
   const skuError =
     submitted && !form.sku.trim() ? t('mobile.products.form.skuRequired') : undefined;
   const sellingPrice =
-    editingId && Number(decimalValue(form.buyingPrice)) === 0
-      ? Number(editing.data?.product.sellingPrice ?? 0)
+    editingId && !priceChanged
+      ? savedSellingPrice
       : calculateSellingPrice(form.buyingPrice, form.margin);
 
   function updateField<Key extends keyof ProductFormValues>(
     key: Key,
     value: ProductFormValues[Key],
   ) {
+    if (key === 'buyingPrice' || key === 'margin') setPriceChanged(true);
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -448,7 +535,7 @@ export function AddProductScreen() {
       showAlert(
         t('mobile.products.form.saveSuccessTitle'),
         t('mobile.products.form.saveSuccessMessage', { id: result.id }),
-        [{ text: t('mobile.products.form.done'), onPress: () => router.back() }],
+        [{ text: t('mobile.products.form.done'), onPress: returnToProducts }],
         'success',
       );
     } catch (error) {
@@ -521,6 +608,23 @@ export function AddProductScreen() {
     maximumFractionDigits: 2,
   }).format(sellingPrice);
 
+  const editingProduct = editingId && hydratedKey === editKey ? editing.data?.product : undefined;
+  if (
+    (editingId && (hydratedKey !== editKey || !editingProduct)) ||
+    (!editingId && hydratedKey !== null)
+  ) {
+    return (
+      <Screen>
+        <Button label={t('mobile.products.form.back')} onPress={returnToProducts} />
+        {editing.isError ? (
+          <ErrorState error={editing.error} onRetry={() => void editing.refetch()} />
+        ) : (
+          <ActivityIndicator accessibilityLabel={t('mobile.common.loading')} />
+        )}
+      </Screen>
+    );
+  }
+
   return (
     <Screen edges={['top']} keyboard contentStyle={styles.screenContent}>
       {alert ? <AlertDialog alert={alert} onClose={closeAlert} /> : null}
@@ -537,7 +641,7 @@ export function AddProductScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('mobile.products.form.back')}
-          onPress={() => router.back()}
+          onPress={returnToProducts}
           style={styles.backButton}
         >
           <Icon name="arrow-back" size="sm" color="primary" flipInRTL />
@@ -633,7 +737,9 @@ export function AddProductScreen() {
               numberOfLines={1}
               style={styles.selectText}
             >
-              {selectedCategory?.name ?? t('mobile.products.form.chooseCategory')}
+              {selectedCategory?.name ??
+                (editingId && form.categoryId ? editing.data?.product.categoryName : undefined) ??
+                t('mobile.products.form.chooseCategory')}
             </AppText>
             <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
           </Pressable>
@@ -772,6 +878,23 @@ export function AddProductScreen() {
               </AppText>
             </View>
           </View>
+          {form.expiryRequired && editingId ? (
+            <View style={styles.field}>
+              <AppText variant="labelSm">{t('mobile.products.form.expiryDate')}</AppText>
+              {[
+                ...new Set(
+                  [
+                    form.expiryDate,
+                    ...(editing.data?.lots ?? []).map((lot) => lot.expiry?.slice(0, 10) ?? ''),
+                  ].filter(Boolean),
+                ),
+              ].map((date) => (
+                <AppText key={date} variant="bodyMd">
+                  {date}
+                </AppText>
+              ))}
+            </View>
+          ) : null}
           {form.expiryRequired && !editingId ? (
             <ExpirationDateField
               label={t('mobile.products.form.expiryDate')}
@@ -837,6 +960,25 @@ export function AddProductScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.photoRow}
         >
+          {editingProduct &&
+            retainedPhotos.map((name) => (
+              <View key={name} style={styles.photoItem}>
+                <ProductPhoto
+                  product={{ ...editingProduct, images: JSON.stringify([name]) }}
+                  size={96}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('mobile.products.form.removePhoto')}
+                  onPress={() =>
+                    setRetainedPhotos((current) => current.filter((item) => item !== name))
+                  }
+                  style={styles.removePhoto}
+                >
+                  <Icon name="close" size="sm" color="onPrimary" />
+                </Pressable>
+              </View>
+            ))}
           {productPhotos.map((photo) => (
             <View key={photo.uri} style={styles.photoItem}>
               <Image source={{ uri: photo.uri }} resizeMode="cover" style={styles.photoPreview} />
@@ -866,9 +1008,11 @@ export function AddProductScreen() {
             </AppText>
           </Pressable>
         </ScrollView>
-        {productPhotos.length > 0 ? (
+        {productPhotos.length + retainedPhotos.length > 0 ? (
           <AppText variant="bodySm" color="onSurfaceVariant">
-            {t('mobile.products.form.photoSelectedCount', { count: productPhotos.length })}
+            {t('mobile.products.form.photoSelectedCount', {
+              count: productPhotos.length + retainedPhotos.length,
+            })}
           </AppText>
         ) : null}
         <AppText variant="bodySm" color="onSurfaceVariant">
@@ -892,7 +1036,7 @@ export function AddProductScreen() {
         <Button
           label={t('mobile.products.form.cancel')}
           variant="outline"
-          onPress={() => router.back()}
+          onPress={returnToProducts}
           style={styles.cancelButton}
         />
         <Button
@@ -910,6 +1054,12 @@ export function AddProductScreen() {
         onClose={() => setCategorySheetOpen(false)}
         title={t('mobile.products.chooseCategory')}
       >
+        {categoriesQuery.isError ? (
+          <ErrorState
+            error={categoriesQuery.error}
+            onRetry={() => void categoriesQuery.refetch()}
+          />
+        ) : null}
         {categoriesQuery.isLoading ? (
           <AppText variant="bodyMd" color="onSurfaceVariant">
             {t('mobile.products.form.loadingCategories')}

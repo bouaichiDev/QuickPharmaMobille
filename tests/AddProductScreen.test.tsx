@@ -1,28 +1,34 @@
 import { act, fireEvent, render, screen as currentScreen } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { ActivityIndicator, BackHandler, Platform } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
 import { AddProductScreen } from '@/features/stores/screens/AddProductScreen';
-import { apiPost } from '@/services/api/client';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useCategories } from '@/features/stores/useCategories';
+import { can } from '@/features/crm/modules';
+import { ProductPhoto } from '@/features/catalogue/ProductPhoto';
+import { ErrorState } from '@/components/feedback/ErrorState';
+import { httpClient, apiPost } from '@/services/api/client';
 import { ApiError } from '@/services/api/apiError';
 import { ProductBarcodeScanner } from '@/features/stores/components/ProductBarcodeScanner';
 
 const mockBack = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockBack, push: jest.fn() }),
+  useRouter: () => ({ back: mockBack, navigate: mockNavigate, push: jest.fn() }),
   useFocusEffect: jest.fn(),
   useLocalSearchParams: jest.fn(() => ({})),
 }));
 jest.mock('@/features/access/useAccess', () => ({ useAccess: () => ({ data: undefined }) }));
-jest.mock('@/features/crm/modules', () => ({ can: () => true }));
+jest.mock('@/features/crm/modules', () => ({ can: jest.fn(() => true) }));
 jest.mock('@/features/catalogue/useStock', () => ({ useStockScope: () => 1 }));
 jest.mock('@/features/catalogue/stockApi', () => ({ stockApi: { detail: jest.fn() } }));
 jest.mock('@/features/catalogue/StockDesign', () => ({ SNote: 'Text' }));
 jest.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({ data: undefined }),
-  useMutation: () => ({ isPending: false, mutateAsync: jest.fn() }),
+  useQuery: jest.fn(() => ({ data: undefined })),
+  useMutation: jest.fn(() => ({ isPending: false, mutateAsync: jest.fn() })),
   useQueryClient: () => ({ invalidateQueries: jest.fn() }),
 }));
 jest.mock('expo-image-picker', () => ({
@@ -30,11 +36,17 @@ jest.mock('expo-image-picker', () => ({
   launchCameraAsync: jest.fn(),
   requestCameraPermissionsAsync: jest.fn(),
 }));
-jest.mock('@/services/api/client', () => ({ apiPost: jest.fn(), apiGet: jest.fn() }));
+jest.mock('@/services/api/client', () => ({
+  apiPost: jest.fn(),
+  apiGet: jest.fn(),
+  httpClient: { post: jest.fn() },
+}));
 jest.mock('@/features/profile/profileApi', () => ({ useProfile: () => ({ data: { id: 42 } }) }));
 jest.mock('@/features/settings/settingsApi', () => ({ useCurrency: () => 'MAD' }));
 jest.mock('@/features/stores/useCategories', () => ({
-  useCategories: () => ({ data: { pages: [{ data: [{ id: 12, name: 'Test category' }] }] } }),
+  useCategories: jest.fn(() => ({
+    data: { pages: [{ data: [{ id: 12, name: 'Test category' }] }] },
+  })),
 }));
 jest.mock('@/features/stores/useProviders', () => ({
   useProviders: () => ({ data: [{ id: 34, name: 'Test supplier' }] }),
@@ -61,6 +73,7 @@ jest.mock('@/components/ui/SelectionDialog', () => ({
     visible ? children : null,
 }));
 jest.mock('@/components/feedback/ErrorState', () => ({ ErrorState: () => null }));
+jest.mock('@/features/catalogue/ProductPhoto', () => ({ ProductPhoto: () => null }));
 jest.mock('@/features/stores/components/ProductBarcodeScanner', () => ({
   ProductBarcodeScanner: () => null,
 }));
@@ -93,6 +106,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(useLocalSearchParams).mockReturnValue({});
 
+  jest.mocked(can).mockReturnValue(true);
+  jest.mocked(useQuery).mockReturnValue({ data: undefined } as never);
   post.mockResolvedValue({ success: 'Product created', id: 123 });
 });
 afterEach(() => jest.restoreAllMocks());
@@ -236,10 +251,14 @@ test('clears draft fields, photos, validation, and open sheets when leaving the 
   expect(post).not.toHaveBeenCalled();
 });
 
-test('keeps edit mode values when leaving the screen', () => {
+test('keeps edit mode values when leaving the screen', async () => {
+  mockEditing();
   jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
   const screen = render(<AddProductScreen />);
   const onBlur = jest.mocked(useFocusEffect).mock.calls[0]![0]()!;
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
   fireEvent.changeText(screen.getByLabelText(key('name')), 'Existing product');
   act(() => onBlur());
   expect(screen.getByLabelText(key('name')).props.value).toBe('Existing product');
@@ -534,13 +553,251 @@ test('development autofill is unavailable while editing an existing product', ()
   expect(screen.queryByText(key('fillTestData'))).toBeNull();
 });
 
-test('success dialog returns to the previous screen only after confirmation', async () => {
+test('success dialog returns to products only after confirmation', async () => {
   const screen = render(<AddProductScreen />);
   fillRequired(screen);
   await save(screen);
   expectAlert(key('saveSuccessTitle'), key('saveSuccessMessage'));
-  expect(mockBack).not.toHaveBeenCalled();
+  expect(mockNavigate).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: key('done') }));
-  expect(mockBack).toHaveBeenCalledTimes(1);
+  expect(mockNavigate).toHaveBeenCalledWith('/stock');
+  expect(mockBack).not.toHaveBeenCalled();
   expect(screen.queryByText(key('saveSuccessTitle'))).toBeNull();
+});
+
+const editProduct = {
+  id: 7,
+  productName: 'Loaded medicine',
+  sku: '007',
+  description: 'Description',
+  categoryId: 12,
+  categoryName: 'Test category',
+  providerId: 34,
+  buyingPrice: 100,
+  sellingPrice: 125,
+  profitMargin: 30,
+  tax: 20,
+  includeTaxInPrice: 1,
+  discount: 5,
+  quantity: 8,
+  originalQuantity: 10,
+  minQuantity: 3,
+  status: 9,
+  hasExpiration: 1,
+  date_expiration: '2028-05-01',
+  precautions: 'Instructions',
+  interactions: 'Interactions',
+  side_effects: 'Side effects',
+  requires_prescription: 1,
+  active: 1,
+  images: '["one.jpg",{"name":"two.jpg"}]',
+};
+function mockEditing(product = editProduct) {
+  jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
+  jest.mocked(useQuery).mockReturnValue({
+    data: {
+      product,
+      lots: [{ quantity: 8, expiry: '2029-01-01' }],
+      movements: [],
+    },
+    refetch: jest.fn(),
+  } as never);
+}
+async function renderEdit() {
+  mockEditing();
+  const result = render(<AddProductScreen />);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  return result;
+}
+test('loads every edit field, saved margin, price, photos and lot expiry', async () => {
+  const screen = await renderEdit();
+  for (const [field, value] of Object.entries({
+    name: 'Loaded medicine',
+    sku: '007',
+    description: 'Description',
+    buyingPrice: '100',
+    taxRate: '20',
+    margin: '30',
+    sellingPrice: '125.00',
+    discount: '5',
+    quantity: '8',
+    minimumStock: '3',
+    instructions: 'Instructions',
+    interactions: 'Interactions',
+    sideEffects: 'Side effects',
+  }))
+    expect(screen.getByLabelText(key(field)).props.value).toBe(value);
+  expect(screen.getByText('Test category')).toBeTruthy();
+  expect(screen.getByText('Test supplier')).toBeTruthy();
+  expect(screen.getByText(key('outOfStock'))).toBeTruthy();
+  for (const field of ['taxIncluded', 'expiryRequired', 'prescription', 'active']) {
+    expect(
+      screen.getByRole('checkbox', { name: key(field) }).props.accessibilityState.checked,
+    ).toBe(true);
+  }
+  expect(screen.getByText('2028-05-01')).toBeTruthy();
+  expect(screen.getByText('2029-01-01')).toBeTruthy();
+  expect(screen.UNSAFE_getAllByType(ProductPhoto)).toHaveLength(2);
+  expect(screen.getByLabelText(key('quantity')).props.editable).toBe(false);
+});
+test('background refresh preserves unsaved edits and removed photos', async () => {
+  const screen = await renderEdit();
+  fireEvent.changeText(screen.getByLabelText(key('name')), 'Unsaved edit');
+  fireEvent.press(screen.getAllByLabelText(key('removePhoto'))[0]!);
+  mockEditing({ ...editProduct, productName: 'Server refresh' });
+  screen.rerender(<AddProductScreen />);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  expect(screen.getByLabelText(key('name')).props.value).toBe('Unsaved edit');
+  expect(screen.UNSAFE_getAllByType(ProductPhoto)).toHaveLength(1);
+});
+test('edit loading hides blank form and failed loading provides retry', () => {
+  jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
+  const screen = render(<AddProductScreen />);
+  expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+  expect(screen.queryByLabelText(key('name'))).toBeNull();
+  const refetch = jest.fn();
+  jest
+    .mocked(useQuery)
+    .mockReturnValue({ isError: true, error: new Error('Offline'), refetch } as never);
+  screen.rerender(<AddProductScreen />);
+  act(() => screen.UNSAFE_getByType(ErrorState).props.onRetry());
+  expect(refetch).toHaveBeenCalledTimes(1);
+});
+test('fetches remaining category pages and resolves a category outside the first page', async () => {
+  const fetchNextPage = jest.fn();
+  jest.mocked(useCategories).mockReturnValueOnce({
+    data: { pages: [{ data: [] }] },
+    hasNextPage: true,
+    isFetchingNextPage: false,
+    fetchNextPage,
+  } as never);
+  const screen = await renderEdit();
+  expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('Test category')).toBeTruthy();
+});
+test('update preserves saved selling price and sends retained images without receipt dates', async () => {
+  const screen = await renderEdit();
+  fireEvent.press(screen.getAllByLabelText(key('removePhoto'))[0]!);
+  const options = jest.mocked(useMutation).mock.calls.at(-1)![0]!;
+  jest.mocked(httpClient.post).mockResolvedValue({ data: { success: true } });
+  let body: FormData;
+  await act(async () => {
+    await options.mutationFn!(
+      {
+        productName: 'Loaded medicine',
+        sku: '007',
+        status: '9',
+        buyingPrice: '100',
+        sellingPrice: '125.00',
+        profitMargin: '30',
+        minQuantity: '3',
+        hasExpiration: '1',
+        date: '2026-10-16',
+        date_expiration: '2028-05-01',
+        quantity: '8',
+      } as never,
+      {} as never,
+    );
+  });
+  body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+  expect(body.get('images')).toBe('two.jpg');
+  expect(body.get('sellingPrice')).toBe('125.00');
+  expect(body.get('quantity')).toBe('10');
+  expect(body.has('date_expiration')).toBe(false);
+  expect(body.has('date')).toBe(false);
+});
+
+test('changing margin recalculates price after initially preserving saved price', async () => {
+  const screen = await renderEdit();
+  fireEvent.changeText(screen.getByLabelText(key('margin')), '40');
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('140.00');
+});
+test('an edit without purchase-price access omits hidden fields from updates', async () => {
+  jest.mocked(can).mockReturnValue(false);
+  const screen = await renderEdit();
+  expect(screen.queryByLabelText(key('buyingPrice'))).toBeNull();
+  const options = jest.mocked(useMutation).mock.calls.at(-1)![0]!;
+  jest.mocked(httpClient.post).mockResolvedValue({ data: { success: true } });
+  await act(async () => {
+    await options.mutationFn!(
+      {
+        productName: 'Loaded medicine',
+        sku: '007',
+        status: '9',
+        buyingPrice: '0',
+        sellingPrice: '125',
+        profitMargin: '0',
+        minQuantity: '0',
+        hasExpiration: '0',
+      } as never,
+      {} as never,
+    );
+  });
+  const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+  for (const field of [
+    'buyingPrice',
+    'sellingPrice',
+    'profitMargin',
+    'minQuantity',
+    'hasExpiration',
+  ]) {
+    expect(body.has(field)).toBe(false);
+  }
+  expect(body.get('images')).toBe('one.jpg,two.jpg');
+});
+
+test('opening Add Product after editing clears the existing product and photos, and can edit it again', async () => {
+  const screen = await renderEdit();
+  expect(screen.UNSAFE_getAllByType(ProductPhoto)).toHaveLength(2);
+  jest.mocked(useLocalSearchParams).mockReturnValue({});
+  jest.mocked(useQuery).mockReturnValue({ data: undefined } as never);
+  expect(() => screen.rerender(<AddProductScreen />)).not.toThrow();
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  expect(screen.getByLabelText(key('name')).props.value).toBe('');
+  expect(screen.getByLabelText(key('sku')).props.value).toBe('');
+  expect(screen.queryAllByLabelText(key('removePhoto'))).toHaveLength(0);
+  expect(screen.UNSAFE_queryAllByType(ProductPhoto)).toHaveLength(0);
+  fillRequired(screen);
+  await save(screen);
+  expect(lastBody().get('images')).toBe('');
+  mockEditing();
+  screen.rerender(<AddProductScreen />);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  expect(screen.getByLabelText(key('name')).props.value).toBe('Loaded medicine');
+  expect(screen.UNSAFE_getAllByType(ProductPhoto)).toHaveLength(2);
+});
+
+test.each(['back', 'cancel'])(
+  '%s from Add Product returns to products instead of dashboard',
+  (action) => {
+    const screen = render(<AddProductScreen />);
+    fireEvent.press(screen.getByRole('button', { name: key(action) }));
+    expect(mockNavigate).toHaveBeenCalledWith('/stock');
+    expect(mockBack).not.toHaveBeenCalled();
+  },
+);
+test('back during product loading returns to products', () => {
+  jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
+  const screen = render(<AddProductScreen />);
+  fireEvent.press(screen.getByRole('button', { name: key('back') }));
+  expect(mockNavigate).toHaveBeenCalledWith('/stock');
+});
+test('Android back returns to products and removes its handler on blur', () => {
+  const remove = jest.fn();
+  const listen = jest.spyOn(BackHandler, 'addEventListener').mockReturnValue({ remove });
+  render(<AddProductScreen />);
+  const cleanup = jest.mocked(useFocusEffect).mock.calls[0]![0]()!;
+  const handler = listen.mock.calls[0]![1];
+  expect(handler(undefined as never)).toBe(true);
+  expect(mockNavigate).toHaveBeenCalledWith('/stock');
+  act(() => cleanup());
+  expect(remove).toHaveBeenCalledTimes(1);
 });
