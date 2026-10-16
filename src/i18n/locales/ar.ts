@@ -179,6 +179,7 @@ export const ar: TranslationDictionary = {
         skuPlaceholder: 'مثال: 6111234567890',
         skuRequired: 'رمز SKU مطلوب.',
         scan: 'مسح',
+        fillTestData: 'تعبئة بيانات تجريبية',
         scanTitle: 'مسح الرمز الشريطي',
         scanHint: 'وجّه الكاميرا نحو الرمز الشريطي للمنتج.',
         scanPermission: 'اسمح بالوصول إلى الكاميرا لمسح الرموز الشريطية للمنتجات.',

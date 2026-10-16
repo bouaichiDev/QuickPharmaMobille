@@ -180,6 +180,7 @@ export const es: TranslationDictionary = {
         skuPlaceholder: 'p. ej. 6111234567890',
         skuRequired: 'El SKU es obligatorio.',
         scan: 'Escanear',
+        fillTestData: 'Rellenar datos de prueba',
         scanTitle: 'Escanear código de barras',
         scanHint: 'Apunte la cámara al código de barras del producto.',
         scanPermission: 'Permita el acceso a la cámara para escanear códigos de barras.',

@@ -9,12 +9,13 @@ import { httpClient } from '@/services/api/client';
 import { productCreateFormData } from '../productsApi';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AppText, useLatinFonts } from '@/components/ui/AppText';
 import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Button } from '@/components/ui/Button';
+import { AlertDialog, type AlertDialogState, type AlertVariant } from '@/components/ui/AlertDialog';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Icon } from '@/components/ui/Icon';
@@ -323,6 +324,7 @@ export function AddProductScreen() {
   const [photoSourceSheetOpen, setPhotoSourceSheetOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [alert, setAlert] = useState<AlertDialogState | null>(null);
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -334,6 +336,7 @@ export function AddProductScreen() {
         setAvailabilitySheetOpen(false);
         setPhotoSourceSheetOpen(false);
         setScannerOpen(false);
+        setAlert(null);
       };
     }, [
       editingId,
@@ -345,6 +348,7 @@ export function AddProductScreen() {
       setAvailabilitySheetOpen,
       setPhotoSourceSheetOpen,
       setScannerOpen,
+      setAlert,
     ]),
   );
   const selectedCategory = categories.find((category) => category.id === form.categoryId);
@@ -365,15 +369,67 @@ export function AddProductScreen() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function fillTestData() {
+    if (!__DEV__ || editingId) return;
+    const suffix = Date.now().toString();
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1);
+    const providerId = providers[0]?.id ?? null;
+    setForm({
+      ...INITIAL_VALUES,
+      productName: `QA Test Product ${suffix}`,
+      sku: `QA-${suffix}`,
+      description: 'Sample product for testing the add product form.',
+      categoryId: categories[0]?.id ?? null,
+      buyingPrice: '100.50',
+      taxRate: '20',
+      taxIncluded: true,
+      margin: '30',
+      discount: '5',
+      quantity: providerId === null ? '0' : '24',
+      providerId,
+      minimumStock: '4',
+      availability: 'inStock',
+      expiryRequired: true,
+      expiryDate: `${expiry.getFullYear()}-${String(expiry.getMonth() + 1).padStart(2, '0')}-${String(expiry.getDate()).padStart(2, '0')}`,
+      usageInstructions: 'QA sample instructions — test data only.',
+      interactions: 'QA sample interactions — test data only.',
+      sideEffects: 'QA sample side effects — test data only.',
+      prescriptionRequired: true,
+      active: true,
+    });
+    setSubmitted(false);
+  }
+  function showAlert(
+    title: string,
+    message: string,
+    buttons?: { text: string; onPress?: () => void }[],
+    variant: AlertVariant = 'error',
+  ) {
+    Keyboard.dismiss();
+    setAlert({
+      title,
+      message,
+      variant,
+      actionLabel: buttons?.[0]?.text ?? t('mobile.products.form.done'),
+      onConfirm: buttons?.[0]?.onPress,
+    });
+  }
+
+  function closeAlert() {
+    const onConfirm = alert?.onConfirm;
+    setAlert(null);
+    onConfirm?.();
+  }
   async function saveProduct() {
     setSubmitted(true);
     if (!form.productName.trim() || !form.sku.trim()) return;
     if (form.availability === null) {
-      Alert.alert(t('mobile.products.form.saveErrorTitle'), t('mobile.products.form.selectStatus'));
+      showAlert(t('mobile.products.form.saveErrorTitle'), t('mobile.products.form.selectStatus'));
       return;
     }
     if (!editingId && Number(decimalValue(form.quantity)) > 0 && form.providerId === null) {
-      Alert.alert(
+      showAlert(
         t('mobile.products.form.saveErrorTitle'),
         t('mobile.products.form.providerRequired'),
       );
@@ -389,13 +445,14 @@ export function AddProductScreen() {
       setForm({ ...INITIAL_VALUES });
       setProductPhotos([]);
       setSubmitted(false);
-      Alert.alert(
+      showAlert(
         t('mobile.products.form.saveSuccessTitle'),
         t('mobile.products.form.saveSuccessMessage', { id: result.id }),
         [{ text: t('mobile.products.form.done'), onPress: () => router.back() }],
+        'success',
       );
     } catch (error) {
-      Alert.alert(t('mobile.products.form.saveErrorTitle'), errorMessage(error, { t, tDynamic }));
+      showAlert(t('mobile.products.form.saveErrorTitle'), errorMessage(error, { t, tDynamic }));
     }
   }
 
@@ -405,9 +462,11 @@ export function AddProductScreen() {
       if (source === 'camera') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert(
+          showAlert(
             t('mobile.products.form.photoPermissionTitle'),
             t('mobile.products.form.photoPermissionMessage'),
+            undefined,
+            'warning',
           );
           return;
         }
@@ -435,9 +494,11 @@ export function AddProductScreen() {
         (asset) => !asset.fileSize || asset.fileSize <= MAX_PRODUCT_PHOTO_SIZE_BYTES,
       );
       if (acceptedAssets.length < selectedAssets.length) {
-        Alert.alert(
+        showAlert(
           t('mobile.products.form.photoTooLargeTitle'),
           t('mobile.products.form.photoTooLargeMessage'),
+          undefined,
+          'warning',
         );
       }
       if (acceptedAssets.length > 0) {
@@ -448,7 +509,7 @@ export function AddProductScreen() {
         });
       }
     } catch {
-      Alert.alert(
+      showAlert(
         t('mobile.products.form.photoErrorTitle'),
         t('mobile.products.form.photoErrorMessage'),
       );
@@ -462,6 +523,7 @@ export function AddProductScreen() {
 
   return (
     <Screen edges={['top']} keyboard contentStyle={styles.screenContent}>
+      {alert ? <AlertDialog alert={alert} onClose={closeAlert} /> : null}
       {scannerOpen ? (
         <ProductBarcodeScanner
           onClose={() => setScannerOpen(false)}
@@ -500,6 +562,16 @@ export function AddProductScreen() {
         </AppText>
       </View>
 
+      {__DEV__ && !editingId ? (
+        <Button
+          label={t('mobile.products.form.fillTestData')}
+          variant="tonal"
+          onPress={fillTestData}
+          disabled={
+            createProduct.isPending || categoriesQuery.isLoading || providersQuery.isLoading
+          }
+        />
+      ) : null}
       <FormSection number="1" title={t('mobile.products.form.general')}>
         <FormField
           label={t('mobile.products.form.name')}
