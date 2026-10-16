@@ -6,6 +6,13 @@ export interface StockProduct {
   sku: string;
   barcode?: string | null;
   categoryName?: string;
+  categoryId?: number | null;
+  providerId?: number | null;
+  status?: number | string;
+  discount?: number | null;
+  side_effects?: string | null;
+  date_expiration?: string | null;
+  originalQuantity?: number | null;
   quantity: number;
   minQuantity: number;
   buyingPrice: number;
