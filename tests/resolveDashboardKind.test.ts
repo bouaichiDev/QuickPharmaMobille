@@ -70,3 +70,13 @@ it('keeps CRM and platform dashboards at the role-aware home screen', () => {
 it('maps an implemented non-dashboard landing route to its native screen', () => {
   expect(resolveLandingRoute('/products')).toBe('/stock');
 });
+
+it('uses the assisted store dashboard instead of the Super Admin landing page', () => {
+  const access = makeAccess({
+    store: { id: 'client', name: 'Client', access: 'support', suspended: false },
+    read_only: true,
+    support_default_route: '/services-crm',
+    permissions: ['services.sessions.view'],
+  });
+  expect(resolveDashboardKind('/superadmin/dashboard', 'SuperAdmin', access)).toBe('crm');
+});

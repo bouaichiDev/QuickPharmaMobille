@@ -676,6 +676,11 @@ function ProductCatalogueContent() {
       {locations || panel === 'locations' ? (
         <LocationsView
           onClose={() => {
+            if (panel === 'locations' && access.data?.role.code === 'SuperAdmin') {
+              if (router.canGoBack()) router.back();
+              else router.replace('/home');
+              return;
+            }
             setLocations(false);
             router.setParams({ panel: undefined });
           }}

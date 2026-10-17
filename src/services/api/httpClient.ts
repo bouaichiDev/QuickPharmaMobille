@@ -21,6 +21,7 @@ declare module 'axios' {
 
 export interface HttpClientContext {
   getToken: () => string | null;
+  isReadOnly?: () => boolean;
   /** Encrypted store id exactly as returned by the API. */
   getStoreId: () => string | null;
   getLanguage: () => string;
@@ -91,6 +92,23 @@ export function createHttpClient({
   });
 
   instance.interceptors.request.use((config) => {
+    const method = (config.method ?? 'get').toLowerCase();
+    const path = (config.url ?? '').split('?')[0] ?? '';
+    const leavingSupport =
+      method === 'delete' && /^\/superadmin\/tenants\/\d+\/impersonate$/.test(path);
+    const loggingOut = method === 'post' && /\/logout$/.test(path);
+    if (
+      context.isReadOnly?.() &&
+      !['get', 'head', 'options'].includes(method) &&
+      !leavingSupport &&
+      !loggingOut
+    ) {
+      throw new ApiError({
+        kind: 'forbidden',
+        status: 403,
+        message: 'Assistance en lecture seule : aucune modification du magasin n’est autorisée.',
+      });
+    }
     const headers = AxiosHeaders.from(config.headers);
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       // The transport supplies the boundary. XHR supports native URI file parts.

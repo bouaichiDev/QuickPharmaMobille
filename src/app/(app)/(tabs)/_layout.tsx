@@ -8,6 +8,7 @@ import { useNotificationsList } from '@/features/notifications/useNotifications'
 import { StoreHeader } from '@/features/stores/components/StoreHeader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colors, fontFamilies, fontForScript, layout } from '@/theme';
+import { useSessionStore } from '@/features/auth/sessionStore';
 
 function tabIcon(name: IconName) {
   function TabIcon({ focused }: { focused: boolean }) {
@@ -25,6 +26,15 @@ function Header() {
 }
 
 export default function TabsLayout() {
+  const status = useSessionStore((s) => s.status);
+  const navigationMode = useSessionStore((s) =>
+    s.session?.role === 'SuperAdmin' && !s.session.supportAccess ? 'platform' : 'store',
+  );
+  if (status !== 'authenticated') return null;
+  return <AuthenticatedTabs key={navigationMode} platform={navigationMode === 'platform'} />;
+}
+
+function AuthenticatedTabs({ platform }: { platform: boolean }) {
   const { t } = useTranslation();
   const latin = useLatinFonts();
   const messages = useNotificationsList();
@@ -35,7 +45,8 @@ export default function TabsLayout() {
     <>
       <Tabs
         screenOptions={{
-          header: Header,
+          headerShown: !platform,
+          header: () => <Header />,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.onSurfaceVariant,
           tabBarLabelStyle: { ...fontForScript(fontFamilies.bodySemiBold, latin), fontSize: 11 },

@@ -17,6 +17,8 @@ export function useAccess() {
     queryKey: accessQueryKey(storeId),
     queryFn: accessApi.getMe,
     enabled: authenticated,
+    networkMode: 'always',
+    retry: false,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchInterval: false,

@@ -26,6 +26,7 @@ export const httpClient = createHttpClient({
   timeoutMs: config.apiTimeoutMs,
   context: {
     getToken: () => bridge.getToken(),
+    isReadOnly: () => bridge.isReadOnly?.() ?? false,
     getStoreId: () => bridge.getStoreId(),
     getLanguage: () => bridge.getLanguage(),
     onUnauthorized: () => bridge.onUnauthorized(),
