@@ -26,6 +26,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { AppText, useLatinFonts } from '@/components/ui/AppText';
 import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { Button } from '@/components/ui/Button';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { AlertDialog, type AlertDialogState, type AlertVariant } from '@/components/ui/AlertDialog';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -114,11 +115,17 @@ const INITIAL_VALUES: ProductFormValues = {
   active: true,
 };
 
-function calculateSellingPrice(buyingPrice: string, margin: string): number {
+function calculateSellingPrice(
+  buyingPrice: string,
+  margin: string,
+  taxRate: string,
+  taxIncluded: boolean,
+): number {
   const cost = Number(buyingPrice.replace(',', '.'));
   const percentage = Number(margin.replace(',', '.'));
-  if (!Number.isFinite(cost) || !Number.isFinite(percentage)) return 0;
-  return Math.max(0, cost * (1 + percentage / 100));
+  const tax = taxIncluded ? Number(taxRate.replace(',', '.')) : 0;
+  if (!Number.isFinite(cost) || !Number.isFinite(percentage) || !Number.isFinite(tax)) return 0;
+  return Math.max(0, cost * (1 + percentage / 100) * (1 + tax / 100));
 }
 
 function decimalValue(value: string): string {
@@ -214,9 +221,10 @@ function FormField({
   editable = true,
 }: FormFieldProps) {
   const latin = useLatinFonts();
+  const { needsReflow } = useResponsiveLayout();
   const inputFont = fontForScript(fontFamilies.body, latin);
   return (
-    <View style={styles.field}>
+    <View style={needsReflow ? [styles.field, styles.naturalField] : styles.field}>
       <AppText variant="labelSm">{label}</AppText>
       <View
         style={[
@@ -260,7 +268,7 @@ function FormField({
 
 export function AddProductScreen() {
   const router = useRouter();
-  const returnToProducts = useCallback(() => router.navigate('/stock'), [router]);
+  const { needsReflow } = useResponsiveLayout();
   const { id: editingId } = useLocalSearchParams<{ id?: string }>();
   const scope = useStockScope();
   const access = useAccess();
@@ -278,6 +286,14 @@ export function AddProductScreen() {
       const fields = { ...input };
       delete fields.date_expiration;
       delete fields.date;
+      delete fields.createdBy;
+      // Supplier belongs to the stock receipt and is not editable here.
+      delete fields.providerId;
+      // Hidden medical fields must retain saved values; prescription is required by the API.
+      fields.precautions = raw.precautions ?? '';
+      fields.interactions = raw.interactions ?? '';
+      fields.side_effects = raw.side_effects ?? '';
+      fields.requires_prescription = Number(raw.requires_prescription) ? '1' : '0';
       // Purchase prices and margins may be masked by the API for this role.
       if (!showCost) {
         for (const key of [
@@ -287,7 +303,6 @@ export function AddProductScreen() {
           'tax',
           'includeTaxInPrice',
           'discount',
-          'providerId',
           'minQuantity',
           'hasExpiration',
         ] as const) {
@@ -297,9 +312,6 @@ export function AddProductScreen() {
       const body = productCreateFormData({
         ...fields,
         description: input.description ?? '',
-        precautions: input.precautions ?? '',
-        interactions: input.interactions ?? '',
-        side_effects: input.side_effects ?? '',
         images: retainedPhotos.join(','),
         status:
           raw.status != null && input.status === (Number(raw.status) === 9 ? '9' : '7')
@@ -311,6 +323,7 @@ export function AddProductScreen() {
       const response = await httpClient.post('/product/update', body);
       if (!response.data?.success)
         throw new Error('La modification du produit n�a pas �t� confirm�e.');
+      initializedKey.current = null;
       await Promise.all(
         ['products', 'catalogue', 'stock-product'].map((key) =>
           queryClient.invalidateQueries({ queryKey: [key] }),
@@ -336,6 +349,16 @@ export function AddProductScreen() {
   const editKey = editingId ? scope + ':' + editingId : null;
   const [priceChanged, setPriceChanged] = useState(false);
   const [savedSellingPrice, setSavedSellingPrice] = useState(0);
+  const returnToProducts = useCallback(() => {
+    initializedKey.current = null;
+    setHydratedKey(null);
+    setForm({ ...INITIAL_VALUES });
+    setRetainedPhotos([]);
+    setProductPhotos([]);
+    setPriceChanged(false);
+    setSavedSellingPrice(0);
+    router.navigate('/stock');
+  }, [router]);
   useEffect(() => {
     if (!editingId) {
       if (initializedKey.current === null) return;
@@ -364,7 +387,14 @@ export function AddProductScreen() {
         buyingPrice: String(buy),
         taxRate: String(p.tax || 0),
         taxIncluded: !!Number(p.includeTaxInPrice),
-        margin: String(p.profitMargin ?? (buy ? (sell / buy - 1) * 100 : 0)),
+        margin: String(
+          p.profitMargin ??
+            (buy
+              ? (sell / (1 + (Number(p.includeTaxInPrice) ? Number(p.tax || 0) : 0) / 100) / buy -
+                  1) *
+                100
+              : 0),
+        ),
         discount: String(p.discount || 0),
         quantity: String(p.quantity || 0),
         providerId: Number(p.providerId) || null,
@@ -386,7 +416,7 @@ export function AddProductScreen() {
       setHydratedKey(editKey);
     });
     return () => cancelAnimationFrame(frame);
-  }, [editingId, editing.data, editKey]);
+  }, [editingId, editing.data, editKey, hydratedKey]);
   const {
     hasNextPage: hasMoreCategories,
     isFetchingNextPage: fetchingCategories,
@@ -439,6 +469,26 @@ export function AddProductScreen() {
   );
   const selectedCategory = categories.find((category) => category.id === form.categoryId);
   const selectedProvider = providers.find((provider) => provider.id === form.providerId);
+  const supplierField = (
+    <View style={needsReflow ? [styles.field, styles.naturalField] : styles.field}>
+      <AppText variant="labelSm">{t('mobile.products.form.supplier')}</AppText>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setProviderSheetOpen(true)}
+        style={styles.selectField}
+      >
+        <AppText
+          variant="bodyMd"
+          color={selectedProvider ? 'onSurface' : 'outline'}
+          numberOfLines={needsReflow ? undefined : 1}
+          style={styles.selectText}
+        >
+          {selectedProvider?.name ?? t('mobile.products.form.chooseSupplier')}
+        </AppText>
+        <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
+      </Pressable>
+    </View>
+  );
   const nameError =
     submitted && !form.productName.trim() ? t('mobile.products.form.nameRequired') : undefined;
   const skuError =
@@ -446,13 +496,14 @@ export function AddProductScreen() {
   const sellingPrice =
     editingId && !priceChanged
       ? savedSellingPrice
-      : calculateSellingPrice(form.buyingPrice, form.margin);
+      : calculateSellingPrice(form.buyingPrice, form.margin, form.taxRate, form.taxIncluded);
 
   function updateField<Key extends keyof ProductFormValues>(
     key: Key,
     value: ProductFormValues[Key],
   ) {
-    if (key === 'buyingPrice' || key === 'margin') setPriceChanged(true);
+    if (key === 'buyingPrice' || key === 'margin' || key === 'taxRate' || key === 'taxIncluded')
+      setPriceChanged(true);
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -512,7 +563,14 @@ export function AddProductScreen() {
     setSubmitted(true);
     if (!form.productName.trim() || !form.sku.trim()) return;
     if (form.availability === null) {
-      showAlert(t('mobile.products.form.saveErrorTitle'), t('mobile.products.form.selectStatus'));
+      showAlert(
+        t(
+          editingId
+            ? 'mobile.products.form.updateErrorTitle'
+            : 'mobile.products.form.saveErrorTitle',
+        ),
+        t('mobile.products.form.selectStatus'),
+      );
       return;
     }
     if (!editingId && Number(decimalValue(form.quantity)) > 0 && form.providerId === null) {
@@ -529,17 +587,33 @@ export function AddProductScreen() {
         files: productPhotos,
         createdBy: profileQuery.data?.id === undefined ? undefined : String(profileQuery.data.id),
       });
-      setForm({ ...INITIAL_VALUES });
+      if (!editingId) setForm({ ...INITIAL_VALUES });
       setProductPhotos([]);
       setSubmitted(false);
       showAlert(
-        t('mobile.products.form.saveSuccessTitle'),
-        t('mobile.products.form.saveSuccessMessage', { id: result.id }),
+        t(
+          editingId
+            ? 'mobile.products.form.updateSuccessTitle'
+            : 'mobile.products.form.saveSuccessTitle',
+        ),
+        t(
+          editingId
+            ? 'mobile.products.form.updateSuccessMessage'
+            : 'mobile.products.form.saveSuccessMessage',
+          { id: result.id },
+        ),
         [{ text: t('mobile.products.form.done'), onPress: returnToProducts }],
         'success',
       );
     } catch (error) {
-      showAlert(t('mobile.products.form.saveErrorTitle'), errorMessage(error, { t, tDynamic }));
+      showAlert(
+        t(
+          editingId
+            ? 'mobile.products.form.updateErrorTitle'
+            : 'mobile.products.form.saveErrorTitle',
+        ),
+        errorMessage(error, { t, tDynamic }),
+      );
     }
   }
 
@@ -608,6 +682,15 @@ export function AddProductScreen() {
     maximumFractionDigits: 2,
   }).format(sellingPrice);
 
+  const discountRate = Number(decimalValue(form.discount));
+  const formattedDiscountedPrice =
+    Number.isFinite(discountRate) && discountRate >= 0 && discountRate <= 100
+      ? new Intl.NumberFormat(locale, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Number(sellingPrice.toFixed(2)) * (1 - discountRate / 100))
+      : null;
+
   const editingProduct = editingId && hydratedKey === editKey ? editing.data?.product : undefined;
   if (
     (editingId && (hydratedKey !== editKey || !editingProduct)) ||
@@ -656,7 +739,7 @@ export function AddProductScreen() {
         </View>
       </View>
 
-      <View style={styles.statusLine}>
+      <View style={needsReflow ? [styles.statusLine, styles.wrappedStatus] : styles.statusLine}>
         <View style={styles.statusDot} />
         <AppText variant="bodySm" color="onSurfaceVariant">
           {t('mobile.products.form.draft')}
@@ -684,8 +767,8 @@ export function AddProductScreen() {
           onChangeText={(value) => updateField('productName', value)}
           error={nameError}
         />
-        <View style={styles.inlineInput}>
-          <View style={styles.flexField}>
+        <View style={needsReflow ? [styles.inlineInput, styles.stackedRow] : styles.inlineInput}>
+          <View style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}>
             <FormField
               label={t('mobile.products.form.sku')}
               value={form.sku}
@@ -712,7 +795,7 @@ export function AddProductScreen() {
           onChangeText={(value) => updateField('description', value)}
           multiline
         />
-        <View style={styles.field}>
+        <View style={needsReflow ? [styles.field, styles.naturalField] : styles.field}>
           <View style={styles.labelActionRow}>
             <AppText variant="labelSm">{t('mobile.products.form.category')}</AppText>
             <Pressable
@@ -734,7 +817,7 @@ export function AddProductScreen() {
             <AppText
               variant="bodyMd"
               color={selectedCategory ? 'onSurface' : 'outline'}
-              numberOfLines={1}
+              numberOfLines={needsReflow ? undefined : 1}
               style={styles.selectText}
             >
               {selectedCategory?.name ??
@@ -748,8 +831,10 @@ export function AddProductScreen() {
 
       {!editingId || showCost ? (
         <FormSection number="2" title={t('mobile.products.form.pricing')}>
-          <View style={styles.fieldRow}>
-            <View style={styles.flexField}>
+          <View style={needsReflow ? [styles.fieldRow, styles.stackedRow] : styles.fieldRow}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.buyingPrice')}
                 value={form.buyingPrice}
@@ -758,7 +843,9 @@ export function AddProductScreen() {
                 suffix={currency ?? undefined}
               />
             </View>
-            <View style={styles.flexField}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.taxRate')}
                 value={form.taxRate}
@@ -775,8 +862,10 @@ export function AddProductScreen() {
               label={t('mobile.products.form.taxIncluded')}
             />
           </View>
-          <View style={styles.fieldRow}>
-            <View style={styles.flexField}>
+          <View style={needsReflow ? [styles.fieldRow, styles.stackedRow] : styles.fieldRow}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.margin')}
                 value={form.margin}
@@ -785,7 +874,9 @@ export function AddProductScreen() {
                 suffix="%"
               />
             </View>
-            <View style={styles.flexField}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.sellingPrice')}
                 value={formattedSellingPrice}
@@ -796,15 +887,44 @@ export function AddProductScreen() {
               />
             </View>
           </View>
-          <FormField
-            label={t('mobile.products.form.discount')}
-            value={form.discount}
-            onChangeText={(value) => updateField('discount', value)}
-            keyboardType="decimal-pad"
-            suffix="%"
-          />
-          <View style={styles.fieldRow}>
-            <View style={styles.flexField}>
+          <View style={needsReflow ? [styles.discountRow, styles.stackedRow] : styles.discountRow}>
+            <View style={needsReflow ? styles.fullWidthField : styles.discountInput}>
+              <FormField
+                label={t('mobile.products.form.discount')}
+                value={form.discount}
+                onChangeText={(value) => updateField('discount', value)}
+                keyboardType="decimal-pad"
+                suffix="%"
+              />
+            </View>
+            {formattedDiscountedPrice !== null ? (
+              <View
+                style={
+                  needsReflow
+                    ? [styles.discountPreview, styles.discountPreviewStacked]
+                    : styles.discountPreview
+                }
+                accessibilityLiveRegion="polite"
+              >
+                <AppText
+                  variant="labelSm"
+                  style={styles.discountAmount}
+                  color="onSuccessContainer"
+                  testID="discounted-selling-price"
+                >
+                  {currency ? currency + ' ' : ''}
+                  {formattedDiscountedPrice}
+                </AppText>
+                <AppText variant="bodySm" style={styles.discountCaption} color="onSuccessContainer">
+                  {t('mobile.products.form.sellingPriceAfterDiscount')}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+          <View style={needsReflow ? [styles.fieldRow, styles.stackedRow] : styles.fieldRow}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.quantity')}
                 value={form.quantity}
@@ -818,29 +938,18 @@ export function AddProductScreen() {
                 }
               />
             </View>
-            <View style={styles.flexField}>
-              <View style={styles.field}>
-                <AppText variant="labelSm">{t('mobile.products.form.supplier')}</AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setProviderSheetOpen(true)}
-                  style={styles.selectField}
-                >
-                  <AppText
-                    variant="bodyMd"
-                    color={selectedProvider ? 'onSurface' : 'outline'}
-                    numberOfLines={1}
-                    style={styles.selectText}
-                  >
-                    {selectedProvider?.name ?? t('mobile.products.form.chooseSupplier')}
-                  </AppText>
-                  <Icon name="keyboard-arrow-down" size="md" color="onSurfaceVariant" />
-                </Pressable>
+            {!editingId ? (
+              <View
+                style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+              >
+                {supplierField}
               </View>
-            </View>
+            ) : null}
           </View>
-          <View style={styles.fieldRow}>
-            <View style={styles.flexField}>
+          <View style={needsReflow ? [styles.fieldRow, styles.stackedRow] : styles.fieldRow}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
               <FormField
                 label={t('mobile.products.form.minimumStock')}
                 value={form.minimumStock}
@@ -848,8 +957,10 @@ export function AddProductScreen() {
                 keyboardType="numeric"
               />
             </View>
-            <View style={styles.flexField}>
-              <View style={styles.field}>
+            <View
+              style={needsReflow ? [styles.flexField, styles.fullWidthField] : styles.flexField}
+            >
+              <View style={needsReflow ? [styles.field, styles.naturalField] : styles.field}>
                 <AppText variant="labelSm">{t('mobile.products.form.availability')}</AppText>
                 <Pressable
                   accessibilityRole="button"
@@ -913,45 +1024,47 @@ export function AddProductScreen() {
         </SNote>
       )}
 
-      <FormSection
-        number="+"
-        title={t('mobile.products.form.medical')}
-        tag={t('mobile.products.form.pharmaTag')}
-      >
-        <FormField
-          label={t('mobile.products.form.instructions')}
-          value={form.usageInstructions}
-          onChangeText={(value) => updateField('usageInstructions', value)}
-          placeholder={t('mobile.products.form.instructionsPlaceholder')}
-          multiline
-        />
-        <FormField
-          label={t('mobile.products.form.interactions')}
-          value={form.interactions}
-          onChangeText={(value) => updateField('interactions', value)}
-          placeholder={t('mobile.products.form.interactionsPlaceholder')}
-          multiline
-        />
-        <FormField
-          label={t('mobile.products.form.sideEffects')}
-          value={form.sideEffects}
-          onChangeText={(value) => updateField('sideEffects', value)}
-          placeholder={t('mobile.products.form.sideEffectsPlaceholder')}
-          multiline
-        />
-        <View style={styles.prescriptionPanel}>
-          <View style={styles.checkboxCopy}>
-            <Checkbox
-              checked={form.prescriptionRequired}
-              onChange={(value) => updateField('prescriptionRequired', value)}
-              label={t('mobile.products.form.prescription')}
-            />
-            <AppText variant="bodySm" color="onSurfaceVariant">
-              {t('mobile.products.form.prescriptionHint')}
-            </AppText>
+      {!editingId ? (
+        <FormSection
+          number="+"
+          title={t('mobile.products.form.medical')}
+          tag={t('mobile.products.form.pharmaTag')}
+        >
+          <FormField
+            label={t('mobile.products.form.instructions')}
+            value={form.usageInstructions}
+            onChangeText={(value) => updateField('usageInstructions', value)}
+            placeholder={t('mobile.products.form.instructionsPlaceholder')}
+            multiline
+          />
+          <FormField
+            label={t('mobile.products.form.interactions')}
+            value={form.interactions}
+            onChangeText={(value) => updateField('interactions', value)}
+            placeholder={t('mobile.products.form.interactionsPlaceholder')}
+            multiline
+          />
+          <FormField
+            label={t('mobile.products.form.sideEffects')}
+            value={form.sideEffects}
+            onChangeText={(value) => updateField('sideEffects', value)}
+            placeholder={t('mobile.products.form.sideEffectsPlaceholder')}
+            multiline
+          />
+          <View style={styles.prescriptionPanel}>
+            <View style={styles.checkboxCopy}>
+              <Checkbox
+                checked={form.prescriptionRequired}
+                onChange={(value) => updateField('prescriptionRequired', value)}
+                label={t('mobile.products.form.prescription')}
+              />
+              <AppText variant="bodySm" color="onSurfaceVariant">
+                {t('mobile.products.form.prescriptionHint')}
+              </AppText>
+            </View>
           </View>
-        </View>
-      </FormSection>
+        </FormSection>
+      ) : null}
 
       <FormSection number="4" title={t('mobile.products.form.visibility')}>
         <AppText variant="labelSm">{t('mobile.products.form.photo')}</AppText>
@@ -998,7 +1111,9 @@ export function AddProductScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('mobile.products.form.photoHint')}
             onPress={() => setPhotoSourceSheetOpen(true)}
-            style={styles.photoAddTile}
+            style={
+              needsReflow ? [styles.photoAddTile, styles.adaptivePhotoTile] : styles.photoAddTile
+            }
           >
             <View style={styles.photoIcon}>
               <Icon name="add-a-photo" size="md" color="secondary" />
@@ -1032,12 +1147,12 @@ export function AddProductScreen() {
         </View>
       </FormSection>
 
-      <View style={styles.actions}>
+      <View style={needsReflow ? [styles.actions, styles.stackedRow] : styles.actions}>
         <Button
           label={t('mobile.products.form.cancel')}
           variant="outline"
           onPress={returnToProducts}
-          style={styles.cancelButton}
+          style={needsReflow ? undefined : styles.cancelButton}
         />
         <Button
           label={t('mobile.products.form.save')}
@@ -1045,7 +1160,7 @@ export function AddProductScreen() {
           loading={createProduct.isPending || updateProduct.isPending}
           disabled={!!editingId && !editing.data}
           onPress={() => void saveProduct()}
-          style={styles.saveButton}
+          style={needsReflow ? undefined : styles.saveButton}
         />
       </View>
 
@@ -1189,6 +1304,31 @@ export function AddProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  discountRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  discountInput: { width: 100 },
+  discountPreviewStacked: { flex: 0, alignSelf: 'stretch' },
+  discountAmount: { fontSize: 11, lineHeight: 14 },
+  discountCaption: { fontSize: 10, lineHeight: 13 },
+  discountPreview: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.success,
+    backgroundColor: colors.successContainer,
+  },
+  naturalField: { flex: 0 },
+  adaptivePhotoTile: { height: 'auto', minHeight: 96 },
+  stackedRow: { flexDirection: 'column', alignItems: 'stretch' },
+  fullWidthField: { flex: 0, width: '100%' },
+  wrappedStatus: { flexWrap: 'wrap', paddingVertical: spacing.sm },
   screenContent: { gap: spacing.md, paddingTop: spacing.sm },
   header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   backButton: {

@@ -1,4 +1,5 @@
 import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { canConvertAppointment, linkedAppointmentSession } from './appointmentSession';
 import { CrmReports } from './components/CrmReports';
 import { CrmDetailContent } from './components/CrmDetailContent';
@@ -87,6 +88,7 @@ const labels: Record<string, string> = {
 };
 function DisplayFields({ data }: { data: CrmRecord }) {
   const { tDynamic, locale } = useTranslation();
+  const { needsReflow } = useResponsiveLayout();
   const currency = useCurrency();
   return (
     <View style={styles.fields}>
@@ -100,6 +102,7 @@ function DisplayFields({ data }: { data: CrmRecord }) {
             key={key}
             style={[
               styles.field,
+              needsReflow && styles.fullField,
               ['description', 'observation', 'notes', 'details'].includes(key) && styles.fullField,
             ]}
           >
@@ -140,7 +143,7 @@ function DisplayFields({ data }: { data: CrmRecord }) {
         const nested = record(data[key]);
         const name = itemName(nested) || String(nested.code ?? '');
         return name ? (
-          <View key={key} style={styles.field}>
+          <View key={key} style={needsReflow ? [styles.field, styles.fullField] : styles.field}>
             <AppText variant="bodySm" color="onSurfaceVariant">
               {
                 {

@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { CreditConfirmation, type CreditReceipt } from './CreditConfirmation';
 import { useState } from 'react';
 import { Share, View } from 'react-native';
@@ -30,6 +31,7 @@ export function CreditCollection({
   onPaid: () => void;
 }) {
   const translation = useTranslation();
+  const { needsReflow } = useResponsiveLayout();
   const store = useSessionStore((state) => state.session?.activeStore?.id);
   const customers = useSalesCustomers();
   const [customer, setCustomer] = useState(initialCustomer);
@@ -245,7 +247,7 @@ export function CreditCollection({
             <AppText variant="headlineSm">Mode de paiement</AppText>
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {['Espèces', 'Carte TPE', 'Virement', 'Chèque'].map((label) => (
-                <View key={label} style={{ width: '47%' }}>
+                <View key={label} style={{ width: needsReflow ? '100%' : '47%' }}>
                   <PosButton
                     label={label}
                     secondary={method !== label}

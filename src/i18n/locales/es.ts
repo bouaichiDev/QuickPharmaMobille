@@ -201,6 +201,7 @@ export const es: TranslationDictionary = {
         sellingPrice: 'Precio de venta',
         calculated: 'Cálculo automático',
         discount: 'Descuento (%)',
+        sellingPriceAfterDiscount: 'Precio de venta después del descuento',
         quantity: 'Cantidad inicial',
         initialQuantityHint: 'Obligatorio si el stock inicial es superior a cero',
         supplier: 'Proveedor',
@@ -249,7 +250,10 @@ export const es: TranslationDictionary = {
         save: 'Guardar producto',
         saveSuccessTitle: 'Producto creado',
         saveSuccessMessage: 'Se creó el producto [id].',
+        updateSuccessTitle: 'Producto actualizado',
+        updateSuccessMessage: 'Se actualizó el producto [id].',
         saveErrorTitle: 'Error al crear el producto',
+        updateErrorTitle: 'Error al actualizar el producto',
         done: 'Hecho',
         featureUnavailableTitle: 'Función no disponible',
         featureUnavailableMessage:

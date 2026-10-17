@@ -1,5 +1,12 @@
 import { act, fireEvent, render, screen as currentScreen } from '@testing-library/react-native';
-import { ActivityIndicator, BackHandler, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  BackHandler,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -106,6 +113,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(useLocalSearchParams).mockReturnValue({});
 
+  jest
+    .mocked(useMutation)
+    .mockImplementation(() => ({ isPending: false, mutateAsync: jest.fn() }) as never);
   jest.mocked(can).mockReturnValue(true);
   jest.mocked(useQuery).mockReturnValue({ data: undefined } as never);
   post.mockResolvedValue({ success: 'Product created', id: 123 });
@@ -170,7 +180,7 @@ test('submits every product field and two photos as multipart data, then clears 
       buyingPrice: '100.50',
       tax: '20',
       profitMargin: '30',
-      sellingPrice: '130.65',
+      sellingPrice: '156.78',
       discount: '5',
       quantity: '24',
       minQuantity: '4',
@@ -537,7 +547,7 @@ test('development autofill populates a complete draft without submitting it', ()
   expect(screen.getByLabelText(key('name')).props.value).toMatch(/^QA Test Product \d+$/);
   expect(screen.getByLabelText(key('sku')).props.value).toMatch(/^QA-\d+$/);
   expect(screen.getByLabelText(key('buyingPrice')).props.value).toBe('100.50');
-  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('130.65');
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('156.78');
   expect(screen.getByLabelText(key('quantity')).props.value).toBe('24');
   expect(screen.getByText('Test category')).toBeTruthy();
   expect(screen.getByText('Test supplier')).toBeTruthy();
@@ -564,6 +574,46 @@ test('success dialog returns to products only after confirmation', async () => {
   expect(mockBack).not.toHaveBeenCalled();
   expect(screen.queryByText(key('saveSuccessTitle'))).toBeNull();
 });
+
+test.each([
+  [360, 1, 'row'],
+  [393, 1, 'row'],
+  [412, 1, 'row'],
+  [430, 1, 'row'],
+  [320, 1, 'column'],
+  [412, 2, 'column'],
+] as const)(
+  'preserves default product rows or reflows at width %s, text scale %s',
+  (width, fontScale, expectedDirection) => {
+    const original = Dimensions.get('window');
+    act(() => Dimensions.set({ window: { ...original, width, height: 915, fontScale } }));
+    const screen = render(<AddProductScreen />);
+    try {
+      const findRow = () =>
+        screen.UNSAFE_getAllByType(View).find((node) => {
+          const style = StyleSheet.flatten(node.props.style);
+          return (
+            style?.gap === 8 &&
+            style?.flexDirection &&
+            node.findAllByProps({ accessibilityLabel: key('buyingPrice') }).length > 0 &&
+            node.findAllByProps({ accessibilityLabel: key('taxRate') }).length > 0
+          );
+        })!;
+      expect(StyleSheet.flatten(findRow().props.style).flexDirection).toBe(expectedDirection);
+      if (expectedDirection === 'row') {
+        const saveButton = screen.getByRole('button', { name: key('save') });
+        expect(StyleSheet.flatten(saveButton.props.style).flex).toBe(1.5);
+      }
+      fireEvent.changeText(screen.getByLabelText(key('name')), 'Preserve my draft');
+      act(() => Dimensions.set({ window: { ...original, width: 320, height: 568, fontScale: 1 } }));
+      expect(StyleSheet.flatten(findRow().props.style).flexDirection).toBe('column');
+      expect(screen.getByLabelText(key('name')).props.value).toBe('Preserve my draft');
+    } finally {
+      screen.unmount();
+      act(() => Dimensions.set({ window: original }));
+    }
+  },
+);
 
 const editProduct = {
   id: 7,
@@ -624,15 +674,12 @@ test('loads every edit field, saved margin, price, photos and lot expiry', async
     discount: '5',
     quantity: '8',
     minimumStock: '3',
-    instructions: 'Instructions',
-    interactions: 'Interactions',
-    sideEffects: 'Side effects',
   }))
     expect(screen.getByLabelText(key(field)).props.value).toBe(value);
   expect(screen.getByText('Test category')).toBeTruthy();
-  expect(screen.getByText('Test supplier')).toBeTruthy();
+  expect(screen.queryByText('Test supplier')).toBeNull();
   expect(screen.getByText(key('outOfStock'))).toBeTruthy();
-  for (const field of ['taxIncluded', 'expiryRequired', 'prescription', 'active']) {
+  for (const field of ['taxIncluded', 'expiryRequired', 'active']) {
     expect(
       screen.getByRole('checkbox', { name: key(field) }).props.accessibilityState.checked,
     ).toBe(true);
@@ -714,7 +761,7 @@ test('update preserves saved selling price and sends retained images without rec
 test('changing margin recalculates price after initially preserving saved price', async () => {
   const screen = await renderEdit();
   fireEvent.changeText(screen.getByLabelText(key('margin')), '40');
-  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('140.00');
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('168.00');
 });
 test('an edit without purchase-price access omits hidden fields from updates', async () => {
   jest.mocked(can).mockReturnValue(false);
@@ -796,8 +843,257 @@ test('Android back returns to products and removes its handler on blur', () => {
   render(<AddProductScreen />);
   const cleanup = jest.mocked(useFocusEffect).mock.calls[0]![0]()!;
   const handler = listen.mock.calls[0]![1];
-  expect(handler(undefined as never)).toBe(true);
+  act(() => {
+    expect(handler(undefined as never)).toBe(true);
+  });
   expect(mockNavigate).toHaveBeenCalledWith('/stock');
   act(() => cleanup());
   expect(remove).toHaveBeenCalledTimes(1);
 });
+
+function enableEditSubmission() {
+  jest.mocked(useMutation).mockImplementation(
+    (options) =>
+      ({
+        isPending: false,
+        mutateAsync: (input: unknown) => options.mutationFn!(input as never, {} as never),
+      }) as never,
+  );
+  jest.mocked(httpClient.post).mockResolvedValue({ data: { success: true } });
+}
+test('Save edits all form fields, removes old photos, uploads a new photo and preserves stock and creator', async () => {
+  enableEditSubmission();
+  const screen = await renderEdit();
+  const originalPlatform = Platform.OS;
+  Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+  const append = jest.spyOn(FormData.prototype, 'append');
+  try {
+    for (const [field, value] of Object.entries({
+      name: ' Updated medicine ',
+      sku: '008',
+      description: 'Updated description',
+      buyingPrice: '200',
+      taxRate: '10',
+      margin: '20',
+      discount: '2',
+      minimumStock: '6',
+    }))
+      fireEvent.changeText(screen.getByLabelText(key(field)), value);
+    fireEvent.press(screen.getByText(key('outOfStock')));
+    fireEvent.press(screen.getByText(key('inStock')));
+    fireEvent.press(screen.getByText(key('taxIncluded')));
+    fireEvent.press(screen.getByText(key('active')));
+    fireEvent.press(screen.getAllByLabelText(key('removePhoto'))[0]!);
+    await pickPhotos(screen, [photo()]);
+    await save(screen);
+    expect(httpClient.post).toHaveBeenCalledWith('/product/update', expect.any(FormData));
+    expect(post).not.toHaveBeenCalled();
+    const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+    for (const [field, value] of Object.entries({
+      id: '7',
+      productName: 'Updated medicine',
+      sku: '008',
+      description: 'Updated description',
+      categoryId: '12',
+      buyingPrice: '200',
+      sellingPrice: '240.00',
+      profitMargin: '20',
+      tax: '10',
+      includeTaxInPrice: 'false',
+      discount: '2',
+      minQuantity: '6',
+      status: '7',
+      active: '0',
+      quantity: '10',
+      images: 'two.jpg',
+      hasExpiration: '1',
+    }))
+      expect(body.get(field)).toBe(value);
+    expect(body.has('createdBy')).toBe(false);
+    expect(body.has('date_expiration')).toBe(false);
+    expect(append).toHaveBeenCalledWith(
+      'files[0]',
+      expect.objectContaining({ uri: 'file:///qa.jpg' }),
+    );
+    expectAlert(key('updateSuccessTitle'), key('updateSuccessMessage'));
+    expect(screen.queryByText(key('saveSuccessTitle'))).toBeNull();
+    expect(screen.getByLabelText(key('name')).props.value).toBe(' Updated medicine ');
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByRole('button', { name: key('done') }));
+    expect(mockNavigate).toHaveBeenCalledWith('/stock');
+  } finally {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatform });
+  }
+});
+test('failed edit save retains changed text, existing photos and new photos for retry', async () => {
+  enableEditSubmission();
+  const screen = await renderEdit();
+  const originalPlatform = Platform.OS;
+  Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+  try {
+    fireEvent.changeText(screen.getByLabelText(key('name')), 'Retry medicine');
+    await pickPhotos(screen, [photo()]);
+    jest
+      .mocked(httpClient.post)
+      .mockRejectedValueOnce(new ApiError({ kind: 'network', message: 'Offline' }));
+    await save(screen);
+    expect(screen.getByLabelText(key('name')).props.value).toBe('Retry medicine');
+    expect(screen.getAllByLabelText(key('removePhoto'))).toHaveLength(3);
+    expect(screen.getByText(key('updateErrorTitle'))).toBeTruthy();
+  } finally {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatform });
+  }
+});
+test.each(['name', 'sku'])('edit validates required %s before calling update', async (field) => {
+  enableEditSubmission();
+  const screen = await renderEdit();
+  fireEvent.changeText(screen.getByLabelText(key(field)), '   ');
+  await save(screen);
+  expect(httpClient.post).not.toHaveBeenCalled();
+  expect(screen.getByText(key(field === 'name' ? 'nameRequired' : 'skuRequired'))).toBeTruthy();
+});
+
+test.each(['back', 'cancel', 'android'])(
+  '%s discards unsaved edit text, price and photo changes for the same product',
+  async (action) => {
+    const listen = jest.spyOn(BackHandler, 'addEventListener');
+    const screen = await renderEdit();
+    const cleanup = jest.mocked(useFocusEffect).mock.calls[0]![0]()!;
+    fireEvent.changeText(screen.getByLabelText(key('name')), 'Discard this name');
+    fireEvent.changeText(screen.getByLabelText(key('margin')), '90');
+    fireEvent.press(screen.getAllByLabelText(key('removePhoto'))[0]!);
+    await pickPhotos(screen, [photo()]);
+    if (action === 'android') {
+      act(() => {
+        listen.mock.calls[0]![1](undefined as never);
+      });
+    } else {
+      fireEvent.press(screen.getByRole('button', { name: key(action) }));
+    }
+    act(() => cleanup());
+    expect(mockNavigate).toHaveBeenCalledWith('/stock');
+    // Tabs keep the form mounted. The product query can retain exactly the same cached object.
+    screen.rerender(<AddProductScreen />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+    expect(screen.getByLabelText(key('name')).props.value).toBe('Loaded medicine');
+    expect(screen.getByLabelText(key('margin')).props.value).toBe('30');
+    expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('125.00');
+    expect(
+      screen.UNSAFE_getAllByType(ProductPhoto).map((node) => node.props.product.images),
+    ).toEqual(['["one.jpg"]', '["two.jpg"]']);
+    expect(screen.getAllByLabelText(key('removePhoto'))).toHaveLength(2);
+    expect(httpClient.post).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
+  },
+);
+
+test('Add Product matches web tax calculation and submits the displayed tax-inclusive price', async () => {
+  const screen = render(<AddProductScreen />);
+  fillRequired(screen);
+  fireEvent.changeText(screen.getByLabelText(key('buyingPrice')), '100.6');
+  fireEvent.changeText(screen.getByLabelText(key('margin')), '31');
+  fireEvent.changeText(screen.getByLabelText(key('taxRate')), '25');
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('131.79');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('164.73');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('131.79');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  await save(screen);
+  expect(lastBody().get('sellingPrice')).toBe('164.73');
+  expect(lastBody().get('includeTaxInPrice')).toBe('true');
+});
+test('Edit Product recalculates on tax checkbox and rate changes and saves the displayed price', async () => {
+  enableEditSubmission();
+  mockEditing({
+    ...editProduct,
+    buyingPrice: 100.6,
+    sellingPrice: 164.73,
+    profitMargin: 31,
+    tax: 25,
+  });
+  const screen = render(<AddProductScreen />);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('164.73');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('131.79');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('164.73');
+  fireEvent.changeText(screen.getByLabelText(key('taxRate')), '10,5');
+  expect(screen.getByLabelText(key('sellingPrice')).props.value).toBe('145.62');
+  await save(screen);
+  const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+  expect(body.get('sellingPrice')).toBe('145.62');
+  expect(body.get('tax')).toBe('10.5');
+});
+
+test('discount preview matches web and updates with tax and discount without discounting the saved base price', async () => {
+  const screen = render(<AddProductScreen />);
+  fillRequired(screen);
+  fireEvent.changeText(screen.getByLabelText(key('buyingPrice')), '100.50');
+  fireEvent.changeText(screen.getByLabelText(key('margin')), '30');
+  fireEvent.changeText(screen.getByLabelText(key('taxRate')), '20');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  fireEvent.changeText(screen.getByLabelText(key('discount')), '5');
+  expect(screen.getByTestId('discounted-selling-price').props.children.join('')).toBe('MAD 148.94');
+  expect(screen.getByText(key('sellingPriceAfterDiscount'))).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText(key('discount')), '100');
+  expect(screen.getByTestId('discounted-selling-price').props.children.join('')).toBe('MAD 0.00');
+  fireEvent.changeText(screen.getByLabelText(key('discount')), '0');
+  expect(screen.getByTestId('discounted-selling-price').props.children.join('')).toBe('MAD 156.78');
+  fireEvent.changeText(screen.getByLabelText(key('discount')), '5');
+  await save(screen);
+  expect(lastBody().get('sellingPrice')).toBe('156.78');
+  expect(lastBody().get('discount')).toBe('5');
+});
+test('edit discount preview uses saved price, accepts decimal commas, and hides invalid discounts', async () => {
+  const screen = await renderEdit();
+  expect(screen.getByTestId('discounted-selling-price').props.children.join('')).toBe('MAD 118.75');
+  fireEvent.changeText(screen.getByLabelText(key('discount')), '10,5');
+  expect(screen.getByTestId('discounted-selling-price').props.children.join('')).toBe('MAD 111.88');
+  for (const value of ['-1', '101', 'abc']) {
+    fireEvent.changeText(screen.getByLabelText(key('discount')), value);
+    expect(screen.queryByTestId('discounted-selling-price')).toBeNull();
+  }
+});
+
+test.each([true, false])(
+  'Edit hides supplier and preserves it by omitting providerId (price access: %s)',
+  async (priceAccess) => {
+    jest.mocked(can).mockReturnValue(priceAccess);
+    enableEditSubmission();
+    const screen = await renderEdit();
+    expect(screen.queryByText(key('supplier'))).toBeNull();
+    expect(screen.queryByText('Test supplier')).toBeNull();
+    await save(screen);
+    const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+    expect(body.has('providerId')).toBe(false);
+  },
+);
+
+test.each([0, 1])(
+  'hidden medical information is preserved and required prescription=%s is sent on edit',
+  async (prescription) => {
+    enableEditSubmission();
+    mockEditing({ ...editProduct, requires_prescription: prescription });
+    const screen = render(<AddProductScreen />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+    expect(screen.queryByText(key('medical'))).toBeNull();
+    for (const field of ['instructions', 'interactions', 'sideEffects']) {
+      expect(screen.queryByLabelText(key(field))).toBeNull();
+    }
+    expect(screen.queryByRole('checkbox', { name: key('prescription') })).toBeNull();
+    await save(screen);
+    const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+    expect(body.get('requires_prescription')).toBe(String(prescription));
+    expect(body.get('precautions')).toBe('Instructions');
+    expect(body.get('interactions')).toBe('Interactions');
+    expect(body.get('side_effects')).toBe('Side effects');
+  },
+);

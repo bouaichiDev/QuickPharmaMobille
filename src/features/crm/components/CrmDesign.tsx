@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { colors } from '@/theme';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 
 /** Layout values from the numbered Stitch CRM exports, independent of API data. */
 export const crmStyles = StyleSheet.create({
@@ -95,6 +96,7 @@ export function CrmPage({
   header?: ReactNode;
 }) {
   const layers = usePageLayers();
+  const { landscape } = useResponsiveLayout();
   const id = useId();
   const focused = useIsFocused();
   const navigation = useContext(NavigationContext);
@@ -103,7 +105,7 @@ export function CrmPage({
     () => (
       <NavigationContext.Provider value={navigation}>
         <NavigationRouteContext.Provider value={route}>
-          <SafeAreaView edges={['top']} style={styles.root}>
+          <SafeAreaView edges={landscape ? ['top', 'left', 'right'] : ['top']} style={styles.root}>
             {header ?? (
               <View style={styles.header}>
                 <Pressable
@@ -143,7 +145,7 @@ export function CrmPage({
         </NavigationRouteContext.Provider>
       </NavigationContext.Provider>
     ),
-    [children, footer, title, onClose, navigation, route, scroll, header],
+    [children, footer, title, onClose, navigation, route, scroll, header, landscape],
   );
   useEffect(() => {
     if (visible && focused) layers?.update(id, content, onClose);

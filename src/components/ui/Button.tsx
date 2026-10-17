@@ -10,6 +10,7 @@ import {
 import { colors, layout, radii, spacing, type ColorToken } from '@/theme';
 
 import { AppText } from './AppText';
+import { useResponsiveLayout } from './useResponsiveLayout';
 import { Icon, type IconName } from './Icon';
 
 export type ButtonVariant = 'primary' | 'tonal' | 'outline' | 'danger' | 'dangerSoft' | 'ghost';
@@ -56,6 +57,7 @@ export function Button({
   accessibilityHint,
   testID,
 }: ButtonProps) {
+  const { needsReflow } = useResponsiveLayout();
   const palette = VARIANTS[variant];
   const inactive = disabled || loading;
 
@@ -69,6 +71,7 @@ export function Button({
       onPress={inactive ? undefined : onPress}
       style={({ pressed }) => [
         styles.base,
+        needsReflow ? styles.adaptiveButton : null,
         compact ? styles.compact : null,
         fullWidth ? styles.fullWidth : null,
         {
@@ -82,12 +85,19 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={colors[palette.fg]} />
       ) : (
-        <View style={styles.content}>
+        <View style={needsReflow ? [styles.content, styles.adaptiveContent] : styles.content}>
           {icon ? <Icon name={icon} size="sm" color={palette.fg} /> : null}
-          <AppText variant="labelLg" color={palette.fg} numberOfLines={1}>
+          <AppText
+            variant="labelLg"
+            color={palette.fg}
+            numberOfLines={needsReflow ? undefined : 1}
+            style={needsReflow ? styles.adaptiveLabel : undefined}
+          >
             {label}
           </AppText>
-          {trailingIcon ? <Icon name={trailingIcon} size="sm" color={palette.fg} flipInRTL /> : null}
+          {trailingIcon ? (
+            <Icon name={trailingIcon} size="sm" color={palette.fg} flipInRTL />
+          ) : null}
         </View>
       )}
     </Pressable>
@@ -95,6 +105,9 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
+  adaptiveButton: { paddingVertical: spacing.sm },
+  adaptiveContent: { maxWidth: '100%', minWidth: 0 },
+  adaptiveLabel: { flexShrink: 1, textAlign: 'center' },
   base: {
     minHeight: layout.touchTarget,
     borderRadius: radii.lg,
