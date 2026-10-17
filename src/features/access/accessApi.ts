@@ -6,7 +6,9 @@ import type { SuccessEnvelope } from '@/types/api';
 export const accessApi = {
   /** Effective access in the active store (store_id is injected by the client). */
   async getMe(): Promise<EffectiveAccess> {
-    const body = await apiGet<SuccessEnvelope<EffectiveAccess>>(endpoints.access.me);
+    const body = await apiGet<SuccessEnvelope<EffectiveAccess>>(endpoints.access.me, {
+      timeout: 8000,
+    });
     return body.data;
   },
 };

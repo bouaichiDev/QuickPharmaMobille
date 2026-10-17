@@ -23,10 +23,11 @@ export function resolveDashboardKind(
   roleCode: string | null | undefined,
   access: EffectiveAccess,
 ): DashboardKind {
-  const route = (defaultRoute ?? '').toLowerCase();
+  const support = access.store?.access === 'support';
+  const route = ((support ? access.support_default_route : defaultRoute) ?? '').toLowerCase();
   const isPlatform = route.startsWith('/superadmin') || access.subscription?.terms === 'platform';
 
-  if (isPlatform || roleCode === 'SuperAdmin') return 'platform';
+  if (!support && (isPlatform || roleCode === 'SuperAdmin')) return 'platform';
   if (route.startsWith('/services-crm'))
     return allowed(access, DASHBOARD_PERMISSIONS.crm) ? 'crm' : 'none';
   // An explicit unsupported landing page must not silently open sales.

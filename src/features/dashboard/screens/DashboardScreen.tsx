@@ -17,6 +17,7 @@ import { CrmDashboard } from '../components/CrmDashboard';
 import { PlatformDashboard } from '../components/PlatformDashboard';
 import { PharmacyDashboard } from '../components/PharmacyDashboard';
 import { resolveDashboardKind } from '../resolveDashboardKind';
+import { PlatformHome } from '@/features/superadmin/Dashboard';
 
 export function DashboardScreen() {
   const { t } = useTranslation();
@@ -44,6 +45,8 @@ export function DashboardScreen() {
       )
     : null;
 
+  if (kind === 'platform' && access.data?.permissions.includes('platform.metrics.view'))
+    return <PlatformHome />;
   return (
     <Screen
       innerStyle={kind === 'crm' ? { maxWidth: undefined } : undefined}

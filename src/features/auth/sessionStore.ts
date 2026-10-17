@@ -21,6 +21,11 @@ interface SessionState {
   bootstrap: () => Promise<void>;
   signIn: (session: Session) => Promise<void>;
   setActiveStore: (store: SessionStore) => Promise<void>;
+  enterSupport: (
+    store: SessionStore,
+    support: NonNullable<Session['supportAccess']>,
+  ) => Promise<void>;
+  leaveSupport: () => Promise<void>;
   resetActiveStoreToDefault: () => Promise<void>;
   signOut: (options?: { revokeOnServer?: boolean; notice?: SessionNotice }) => Promise<void>;
   clearNotice: () => void;
@@ -29,6 +34,7 @@ interface SessionState {
 export const sessionService = createSessionService(secureStorage, authApi.checkToken);
 
 let signingOut = false;
+let sessionRevision = 0;
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   status: 'booting',
@@ -37,7 +43,15 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   notice: null,
 
   async bootstrap() {
+    const revision = sessionRevision;
     const result = await sessionService.restore();
+    if (revision !== sessionRevision) {
+      // A slow check-token must never restore a session after the user has left.
+      const current = get().session;
+      if (current) await sessionService.persist(current);
+      else await sessionService.clear();
+      return;
+    }
     logger.debug('Session restore result', { status: result.status });
     if (result.status === 'anonymous') {
       set({ status: 'anonymous', session: null, unverified: false });
@@ -51,6 +65,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   async signIn(session) {
+    sessionRevision++;
     await sessionService.persist(session);
     queryClient.clear();
     set({ status: 'authenticated', session, unverified: false, notice: null });
@@ -66,10 +81,31 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ session });
   },
 
+  async enterSupport(store, support) {
+    const current = get().session;
+    if (!current || current.role !== 'SuperAdmin') throw new Error('Accès assistance refusé.');
+    const session = { ...current, activeStore: store, supportAccess: support };
+    await sessionService.persist(session);
+    queryClient.clear();
+    set({ session });
+  },
+  async leaveSupport() {
+    const current = get().session;
+    if (!current) return;
+    const session = { ...current, activeStore: current.defaultStore, supportAccess: undefined };
+    await sessionService.persist(session);
+    queryClient.clear();
+    set({ session });
+  },
+
   async resetActiveStoreToDefault() {
     const current = get().session;
     if (!current) return;
-    const session: Session = { ...current, activeStore: current.defaultStore };
+    const session: Session = {
+      ...current,
+      activeStore: current.defaultStore,
+      supportAccess: undefined,
+    };
     await sessionService.persist(session);
     queryClient.clear();
     set({ session, notice: 'storeAccessLost' });
@@ -77,6 +113,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   async signOut({ revokeOnServer = true, notice = null } = {}) {
     if (signingOut) return;
+    sessionRevision++;
     signingOut = true;
     try {
       if (revokeOnServer && get().session) {
@@ -101,6 +138,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 }));
 
 registerApiContext({
+  isReadOnly: () => !!useSessionStore.getState().session?.supportAccess,
   getToken: () => useSessionStore.getState().session?.token ?? null,
   getStoreId: () => useSessionStore.getState().session?.activeStore?.id ?? null,
   onUnauthorized: () => {

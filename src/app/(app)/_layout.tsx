@@ -10,6 +10,7 @@ import { useSessionStore } from '@/features/auth/sessionStore';
 import { StoreAccessGuard } from '@/features/stores/components/StoreAccessGuard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colors, fontFamilies } from '@/theme';
+import { SupportBanner } from '@/features/superadmin/SupportBanner';
 
 export default function AppLayout() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -24,6 +25,7 @@ export default function AppLayout() {
     <StoreAccessGuard>
       <View style={{ flex: 1 }}>
         <OfflineBanner />
+        <SupportBanner />
         <PageLayersProvider footer={<AppBottomNavigation onMore={() => setMenuVisible(true)} />}>
           <Stack
             screenOptions={{
@@ -39,6 +41,7 @@ export default function AppLayout() {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="crm/[module]" options={{ headerShown: false }} />
+            <Stack.Screen name="superadmin/[module]" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ title: t('mobile.nav.more') }} />
             <Stack.Screen name="plans/index" options={{ title: t('mobile.plans.title') }} />
             <Stack.Screen name="plans/[id]" options={{ title: t('mobile.plans.title') }} />

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,10 +25,15 @@ export function StoreAccessGuard({ children }: { children: ReactNode }) {
   const clearNotice = useSessionStore((state) => state.clearNotice);
   const resetActiveStoreToDefault = useSessionStore((state) => state.resetActiveStoreToDefault);
   const signOut = useSessionStore((state) => state.signOut);
+  const unverified = useSessionStore((state) => state.unverified);
+  const bootstrap = useSessionStore((state) => state.bootstrap);
+  const [retrying, setRetrying] = useState(false);
   const access = useAccess();
 
   const resolution =
-    access.error && isApiError(access.error) ? resolveStoreAccessError(session, access.error) : 'none';
+    access.error && isApiError(access.error)
+      ? resolveStoreAccessError(session, access.error)
+      : 'none';
 
   useEffect(() => {
     if (resolution === 'resetToDefault') void resetActiveStoreToDefault();
@@ -36,6 +41,47 @@ export function StoreAccessGuard({ children }: { children: ReactNode }) {
 
   const isSuperAdmin = session?.role === 'SuperAdmin';
   const blocked = resolution === 'blocked' || (!session?.activeStore && !isSuperAdmin);
+
+  // A paused query can stay pending indefinitely while offline. Always offer a local exit.
+  if (unverified || (!blocked && !access.data && (access.isPaused || access.isError))) {
+    return (
+      <SafeAreaView style={styles.blocked}>
+        <EmptyState
+          icon="cloud-off"
+          tone="error"
+          title="Connexion au serveur impossible"
+          message="Vérifiez votre connexion et l’adresse de l’API, puis réessayez ou revenez à la connexion."
+        />
+        <View style={styles.actions}>
+          <Button
+            label="Réessayer"
+            loading={retrying}
+            onPress={() => {
+              if (retrying) return;
+              setRetrying(true);
+              void (async () => {
+                try {
+                  if (unverified) await bootstrap();
+                  if (
+                    useSessionStore.getState().status === 'authenticated' &&
+                    !useSessionStore.getState().unverified
+                  )
+                    await access.refetch();
+                } finally {
+                  setRetrying(false);
+                }
+              })();
+            }}
+          />
+          <Button
+            label="Retour à la connexion"
+            variant="tonal"
+            onPress={() => void signOut({ revokeOnServer: false })}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (blocked) {
     const suspended = isApiError(access.error) && access.error.isStoreSuspended;
@@ -48,8 +94,16 @@ export function StoreAccessGuard({ children }: { children: ReactNode }) {
           message={isApiError(access.error) ? access.error.message : undefined}
         />
         <View style={styles.actions}>
-          <Button label={t('mobile.common.retry')} variant="tonal" onPress={() => void access.refetch()} />
-          <Button label={t('mobile.profile.logoutButton')} variant="dangerSoft" onPress={() => void signOut()} />
+          <Button
+            label={t('mobile.common.retry')}
+            variant="tonal"
+            onPress={() => void access.refetch()}
+          />
+          <Button
+            label={t('mobile.profile.logoutButton')}
+            variant="dangerSoft"
+            onPress={() => void signOut()}
+          />
         </View>
       </SafeAreaView>
     );

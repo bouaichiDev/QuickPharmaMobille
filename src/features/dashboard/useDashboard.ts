@@ -37,7 +37,7 @@ export function useAlertsDashboard(enabled = true) {
   return useQuery({
     queryKey: ['alerts', 'dashboard', storeId],
     queryFn: dashboardApi.alerts,
-    enabled,
+    enabled: enabled && !!storeId,
     staleTime: 60_000,
   });
 }

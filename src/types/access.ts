@@ -141,6 +141,8 @@ export interface MenuNode {
 }
 
 export interface EffectiveAccess {
+  read_only?: boolean;
+  support_default_route?: string | null;
   account: { id: string; is_owner: boolean } | null;
   store: { id: string; name: string | null; access: StoreAccess; suspended: boolean } | null;
   role: { id: number | null; code: string | null; scope: 'account' | 'global' };

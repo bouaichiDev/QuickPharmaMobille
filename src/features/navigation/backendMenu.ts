@@ -1,6 +1,7 @@
 import type { EffectiveAccess, MenuNode } from '@/types/access';
 import { can, crmModules } from '@/features/crm/modules';
 import type { IconName } from '@/components/ui/Icon';
+import { platformDestination } from '@/features/superadmin/modules';
 
 export interface MobileMenuItem {
   label: string;
@@ -18,6 +19,36 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
   const groups: MobileMenuGroup[] = [];
   function destination(route: string) {
     const path = (route.split(/[?#]/)[0] ?? '').replace(/\/$/, '');
+    const platformPath =
+      path === '/roles'
+        ? '/superadmin/access/roles'
+        : ['/types', '/icons'].includes(path)
+          ? '/statuses'
+          : path;
+    const platform =
+      access?.role.code === 'SuperAdmin' ? platformDestination(platformPath) : undefined;
+    if (platform) return { ...platform, denied: !can(access, platform.permission) };
+    if (path === '/superadmin/access')
+      return {
+        href: '/superadmin/access',
+        icon: 'admin-panel-settings' as IconName,
+        fallback: 'Accès et abonnements',
+        denied: !access?.permissions.some((p) => p.startsWith('platform.')),
+      };
+    if (path === '/users' && access?.role.code === 'SuperAdmin')
+      return {
+        href: '/superadmin/users',
+        icon: 'group' as IconName,
+        fallback: 'Utilisateurs',
+        denied: !can(access, 'platform.permissions.manage'),
+      };
+    if (path === '/translations')
+      return {
+        href: '/superadmin/translations',
+        icon: 'translate' as IconName,
+        fallback: 'Traductions',
+        denied: !can(access, 'platform.translations.manage'),
+      };
     const key = path === '/services-crm' ? 'dashboard' : path.replace('/services-crm/', '');
     const module = crmModules.find((m) => m.key === (key === 'settings' ? 'form-builder' : key));
     if (path.startsWith('/services-crm') && module)
@@ -81,6 +112,18 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
       : undefined;
   }
   const labels: Record<string, string> = {
+    'Access & subscriptions': 'Accès et abonnements',
+    Health: 'Santé plateforme',
+    Tenants: 'Magasins',
+    Plans: 'Plan',
+    'Roles & Permissions': 'Rôles',
+    validateBilling: 'Validation des factures',
+    'Audit Logs': 'Journaux d’audit',
+    Translations: 'Traductions',
+    'menu-role assignments': 'Attribution des rôles',
+    Platform: 'Plateforme',
+    'Icons management': 'Icônes',
+    'Status Management': 'Statuts',
     Dashboard: 'Tableau de bord',
     SelectPlans: 'Abonnements',
     Stores: 'Établissements',
@@ -101,9 +144,9 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
   function visit(nodes: MenuNode[], title: string) {
     for (const node of [...nodes].sort((a, b) => a.order - b.order)) {
       if (Number(node.hidden) === 1) continue;
-      const heading = node.children?.length ? node.label : title;
+      const heading = node.children?.length ? (labels[node.label] ?? node.label) : title;
       const target = node.route ? destination(node.route) : undefined;
-      if ((node.route && !['#', '/'].includes(node.route)) || target || !node.children?.length) {
+      if (target || !node.children?.length) {
         let group = groups.find((g) => g.title === heading);
         if (!group) {
           group = { title: heading, items: [] };
@@ -136,6 +179,8 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
   }
   visit(menus, 'Modules');
   if (
+    access?.store?.access !== 'support' &&
+    access?.role.code !== 'SuperAdmin' &&
     ['products.view', 'stock.view', 'stock.locations.manage'].some((permission) =>
       can(access, permission),
     ) &&

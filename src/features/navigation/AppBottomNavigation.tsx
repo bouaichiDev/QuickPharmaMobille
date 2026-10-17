@@ -1,4 +1,4 @@
-import { router, usePathname } from 'expo-router';
+import { router, usePathname, type Href } from 'expo-router';
 import { Pressable, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAlertsDashboard } from '@/features/dashboard/useDashboard';
 import { useNotificationsList } from '@/features/notifications/useNotifications';
 import { can } from '@/features/crm/modules';
+import { useSessionStore } from '@/features/auth/sessionStore';
 
 export function AppBottomNavigation({
   onMore,
@@ -32,17 +33,52 @@ export function AppBottomNavigation({
   const pages = usePageLayers();
   const insets = useSafeAreaInsets();
   const access = useAccess();
+  const platform = useSessionStore(
+    (s) => s.session?.role === 'SuperAdmin' && !s.session.supportAccess,
+  );
   const items: {
     label: string;
     icon: IconName;
-    path: '/home' | '/stock' | '/notifications';
-  }[] = [
-    { label: t('mobile.nav.home'), icon: 'home', path: '/home' },
-    ...(preview || can(access.data, 'products.view')
-      ? [{ label: t('mobile.nav.stock'), icon: 'inventory-2' as IconName, path: '/stock' as const }]
-      : []),
-    { label: t('mobile.nav.notifications'), icon: 'notifications-none', path: '/notifications' },
-  ];
+    path: string;
+  }[] = platform
+    ? [
+        { label: 'Tableau de bord', icon: 'dashboard', path: '/home' },
+        ...(can(access.data, 'platform.tenants.manage')
+          ? [
+              {
+                label: 'Établissements',
+                icon: 'storefront' as IconName,
+                path: '/superadmin/tenants',
+              },
+            ]
+          : []),
+        ...(can(access.data, 'platform.subscriptions.manage')
+          ? [
+              {
+                label: 'Abonnements',
+                icon: 'receipt-long' as IconName,
+                path: '/superadmin/billings',
+              },
+            ]
+          : []),
+      ]
+    : [
+        { label: t('mobile.nav.home'), icon: 'home', path: '/home' },
+        ...(preview || can(access.data, 'products.view')
+          ? [
+              {
+                label: t('mobile.nav.stock'),
+                icon: 'inventory-2' as IconName,
+                path: '/stock' as const,
+              },
+            ]
+          : []),
+        {
+          label: t('mobile.nav.notifications'),
+          icon: 'notifications-none',
+          path: '/notifications',
+        },
+      ];
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {items.map((item) => {
@@ -57,7 +93,7 @@ export function AppBottomNavigation({
             onPress={() => {
               pages?.clear();
               if (onNavigate) onNavigate(item.path);
-              else router.navigate(item.path);
+              else router.navigate(item.path as Href);
             }}
           >
             <View>

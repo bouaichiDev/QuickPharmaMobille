@@ -40,6 +40,7 @@ export const authApi = {
       skipAuth: true,
       skipStoreContext: true,
       headers: { Authorization: `Bearer ${token}` },
+      timeout: 8000,
     });
     return body.data;
   },

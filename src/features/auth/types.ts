@@ -45,6 +45,8 @@ export interface SessionStore {
 
 /** What the app persists in SecureStore. */
 export interface Session {
+  /** Time-boxed support context; the actor/token always remain the SuperAdmin. */
+  supportAccess?: { tenantId: number; storeName: string; expiresAt: string };
   token: string;
   userId: string;
   role: string;

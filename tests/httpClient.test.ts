@@ -165,3 +165,41 @@ describe('createHttpClient', () => {
     expect(context.onAccessDenied).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('support read-only transport', () => {
+  const transport = jest.fn(async (config: InternalAxiosRequestConfig) => ({
+    data: {},
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config,
+  }));
+  const client = createHttpClient({
+    baseURL: 'https://example.test',
+    timeoutMs: 1000,
+    context: {
+      getToken: () => 'token',
+      getStoreId: () => 'store',
+      getLanguage: () => 'fr',
+      isReadOnly: () => true,
+      onUnauthorized: jest.fn(),
+      onAccessDenied: jest.fn(),
+    },
+  });
+  client.defaults.adapter = transport;
+  beforeEach(() => transport.mockClear());
+  it.each(['post', 'put', 'patch', 'delete'])(
+    'blocks %s before transport even without store context',
+    async (method) => {
+      await expect(
+        client.request({ url: '/products', method, skipStoreContext: true }),
+      ).rejects.toMatchObject({ kind: 'forbidden', status: 403 });
+      expect(transport).not.toHaveBeenCalled();
+    },
+  );
+  it('allows consultation and ending support', async () => {
+    await client.get('/products');
+    await client.delete('/superadmin/tenants/42/impersonate', { skipStoreContext: true });
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+});

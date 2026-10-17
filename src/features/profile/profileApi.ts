@@ -20,6 +20,12 @@ export interface UserProfile {
 export const profileApi = {
   /** `0` = the authenticated user (self_param in the route matrix). */
   async getSelf(): Promise<UserProfile | null> {
+    if (useSessionStore.getState().session?.role === 'SuperAdmin') {
+      const body = await apiGet<SuccessEnvelope<UserProfile>>('/superadmin/mobile/profile', {
+        skipStoreContext: true,
+      });
+      return body.data;
+    }
     const body = await apiGet<SuccessEnvelope<UserProfile[]>>(endpoints.users.showSelf);
     return body.data[0] ?? null;
   },
