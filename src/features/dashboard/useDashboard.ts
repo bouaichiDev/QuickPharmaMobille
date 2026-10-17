@@ -19,11 +19,14 @@ export function usePharmacyDashboard(period: DashboardPeriod, enabled = true) {
   });
 }
 
-export function useCrmDashboard(enabled = true) {
+export function useCrmDashboard(
+  enabled = true,
+  filters: { date_from?: string; date_to?: string } = {},
+) {
   const storeId = useStoreKey();
   return useQuery({
-    queryKey: ['dashboard', 'crm', storeId],
-    queryFn: dashboardApi.crm,
+    queryKey: ['dashboard', 'crm', storeId, filters],
+    queryFn: () => dashboardApi.crm(filters),
     enabled,
     staleTime: 2 * 60_000,
   });
@@ -40,7 +43,9 @@ export function useAlertsDashboard(enabled = true) {
 }
 
 /** Period options offered by the dashboard (the API filters by year and month). */
-export function buildPeriods(now: Date = new Date()): Record<'month' | 'previousMonth' | 'year', DashboardPeriod> {
+export function buildPeriods(
+  now: Date = new Date(),
+): Record<'month' | 'previousMonth' | 'year', DashboardPeriod> {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const previous = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };

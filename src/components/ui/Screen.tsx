@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { colors, layout, spacing } from '@/theme';
+import { useResponsiveLayout } from './useResponsiveLayout';
 
 interface ScreenProps {
   children: ReactNode;
@@ -22,6 +23,7 @@ interface ScreenProps {
   keyboard?: boolean;
   header?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  innerStyle?: StyleProp<ViewStyle>;
   background?: keyof typeof colors;
 }
 
@@ -34,8 +36,10 @@ export function Screen({
   keyboard = false,
   header,
   contentStyle,
+  innerStyle,
   background = 'background',
 }: ScreenProps) {
+  const { landscape } = useResponsiveLayout();
   const body = scroll ? (
     <ScrollView
       contentContainerStyle={[styles.content, contentStyle]}
@@ -51,14 +55,17 @@ export function Screen({
         ) : undefined
       }
     >
-      <View style={styles.inner}>{children}</View>
+      <View style={[styles.inner, innerStyle]}>{children}</View>
     </ScrollView>
   ) : (
     <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>
   );
 
   return (
-    <SafeAreaView edges={edges} style={[styles.fill, { backgroundColor: colors[background] }]}>
+    <SafeAreaView
+      edges={landscape ? Array.from(new Set<Edge>([...edges, 'left', 'right'])) : edges}
+      style={[styles.fill, { backgroundColor: colors[background] }]}
+    >
       {header}
       {keyboard ? (
         <KeyboardAvoidingView

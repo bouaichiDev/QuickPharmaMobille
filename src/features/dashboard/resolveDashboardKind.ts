@@ -27,7 +27,10 @@ export function resolveDashboardKind(
   const isPlatform = route.startsWith('/superadmin') || access.subscription?.terms === 'platform';
 
   if (isPlatform || roleCode === 'SuperAdmin') return 'platform';
-  if (route.startsWith('/services-crm') && allowed(access, DASHBOARD_PERMISSIONS.crm)) return 'crm';
+  if (route.startsWith('/services-crm'))
+    return allowed(access, DASHBOARD_PERMISSIONS.crm) ? 'crm' : 'none';
+  // An explicit unsupported landing page must not silently open sales.
+  if (route && route !== '/' && route !== '/dashboard') return 'none';
   if (allowed(access, DASHBOARD_PERMISSIONS.pharmacy)) return 'pharmacy';
   if (allowed(access, DASHBOARD_PERMISSIONS.crm)) return 'crm';
   return 'none';
