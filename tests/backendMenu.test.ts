@@ -177,3 +177,50 @@ it('exposes locations to a stock reader without granting management rights', () 
     expect(items.find((i) => i.href === '/stock?panel=locations')?.disabled).not.toBe(true);
   }
 });
+
+it.each(['Admin', 'serviceCRM', 'vendeur', 'custom-role', 'SuperAdmin'])(
+  'keeps web labels and order for %s without renaming modules for mobile',
+  (code) => {
+    const access = makeAccess({
+      role: { id: 1, code, scope: 'global' },
+      permissions: [],
+      menus: [
+        menu({ id: 1, label: 'Products', route: '/products', order: 1 }),
+        menu({ id: 2, label: 'SelectPlans', route: '/plans/selection', order: 2 }),
+        menu({ id: 3, label: 'Stores', route: '/stores', order: 3 }),
+        menu({ id: 4, label: 'Categories', route: '/categories', order: 4 }),
+        menu({ id: 5, label: 'Stock Entry', route: '/stock-entry', order: 5 }),
+      ],
+    });
+    expect(
+      backendMenuGroups(access)
+        .flatMap((g) => g.items)
+        .map((i) => i.label),
+    ).toEqual(['Produits', 'Sélectionner un plan', 'Magasins', 'Catégories', 'Entrée']);
+  },
+);
+it('uses the web header translation key and retains root order around submenus', () => {
+  const translate = (key: string, fallback: string) =>
+    key === 'Products' ? 'Produits web' : fallback;
+  const access = makeAccess({
+    permissions: [],
+    menus: [
+      menu({ id: 1, label: 'stock', header: 'Products', route: '/products', order: 1 }),
+      menu({
+        id: 2,
+        label: 'Services',
+        route: '#',
+        order: 2,
+        children: [menu({ id: 3, label: 'Mes soins' })],
+      }),
+      menu({ id: 4, label: 'Stores', route: '/stores', order: 3 }),
+    ],
+  });
+  const groups = backendMenuGroups(access, access.menus, translate);
+  expect(groups.flatMap((g) => g.items).map((i) => i.label)).toEqual([
+    'Produits web',
+    'Mes soins',
+    'Magasins',
+  ]);
+  expect(groups.map((g) => g.title)).toEqual(['Modules', 'Services', 'Modules']);
+});

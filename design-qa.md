@@ -235,3 +235,16 @@ L’entrée ouvre maintenant un espace commun avec les neuf onglets du web, filt
 Navigation : les onglets authentifiés sont démontés quand la session devient anonyme ; une transition entre contexte plateforme et magasin remonte une instance distincte, sans appeler de composant à hooks comme simple callback. Tests de transition authentifié → 401 → Admin → SuperAdmin et de montage/retrait d’en-tête réussis. Tests de matrice : aucun envoi avant confirmation, quotas/essais conservés, version de concurrence envoyée. Suite complète passée (40 suites / 219 tests), puis test supplémentaire de visibilité des onglets réussi. TypeScript et ESLint passent.
 
 Aucun service lancé pour cette correction. Le contrôle visuel natif de ce nouvel espace reste à réaliser ; aucune parité pixel à pixel avec les captures web n’est revendiquée. Les tableaux horizontaux et sections dépliables constituent l’adaptation téléphone ; les données et droits restent fournis par les API existantes.
+
+
+# Commerce mobile - Magasins, Clients, Entree - 18 octobre 2026
+
+final result: blocked
+
+References examinees : screen.png et code.html des dossiers M1-M4, C1-C3 et E1-E6 fournis dans stitch_quickpharma_logo_integration. Les exports sont des vues telephone, certaines contenant des titres et informations metier incoherents : les titres ont ete corriges et les actions sont limitees aux contrats API existants.
+
+Implementation : cartes blanches, encarts bleus clairs, badges turquoise, formulaires sections, filtres dans des dialogues, listes paginees virtualisees. ResponsiveGrid/ResponsiveList mesurent la largeur disponible et utilisent plusieurs colonnes sur tablette. Navigation existante et zones systeme conservees. Scanner, impression et galerie charges a la demande ; camera demontee a la fermeture. Aucun nouveau paquet natif. R8/minification et suppression des ressources inutilisees restent actives dans app.config.js.
+
+Verification effectuee : tests React Native des listes, filtres, fiches et creation de magasin avec API simulee ; tests des montants, expirations, contrats JSON, permissions du menu et protection lecture seule. Aucune creation/modification sur l'API de production.
+
+Limite : aucun serveur ni application demarre, conformement a la consigne utilisateur. Pas de capture du rendu implemente dans le meme viewport que Stitch ; la comparaison visuelle exigee par image-to-code/design-qa reste bloquee. Ni fidelite pixel par pixel, ni test camera/impression natif, ni score DEX de la prochaine AAB ne sont certifies.

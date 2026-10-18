@@ -30,11 +30,13 @@ export function ServicesMenuSheet({ visible, onClose }: { visible: boolean; onCl
     support && access.data
       ? { ...access.data, role: { ...access.data.role, code: 'Assistance' } }
       : access.data;
+  const backendGroups = backendMenuGroups(
+    menuAccess,
+    support ? (access.data?.menus ?? []) : (session?.menus ?? access.data?.menus ?? []),
+    tDynamic,
+  );
   const groups: MobileMenuGroup[] = [
-    ...backendMenuGroups(
-      menuAccess,
-      support ? (access.data?.menus ?? []) : (session?.menus ?? access.data?.menus ?? []),
-    ),
+    ...backendGroups,
     ...(!support
       ? [
           {
@@ -50,7 +52,8 @@ export function ServicesMenuSheet({ visible, onClose }: { visible: boolean; onCl
                 icon: 'notifications-none' as IconName,
                 href: '/notifications',
               },
-              ...(can(access.data, 'subscription.view')
+              ...(can(access.data, 'subscription.view') &&
+              !backendGroups.some((group) => group.items.some((item) => item.href === '/plans'))
                 ? [
                     {
                       label: t('mobile.plans.title'),
@@ -72,7 +75,7 @@ export function ServicesMenuSheet({ visible, onClose }: { visible: boolean; onCl
       title={
         !support && access.data?.role.code === 'SuperAdmin'
           ? tDynamic('mobile.menu.superadmin.title', 'Administration')
-          : tDynamic('mobile.menu.title', 'Modules & Services CRM')
+          : tDynamic('mobile.menu.storeTitle', 'Menu du magasin')
       }
       subtitle={`${session?.activeStore?.name ?? 'QuickPharma'} · ${support ? 'Lecture seule' : (access.data?.role.code ?? session?.role ?? '')}`}
     >
@@ -107,12 +110,12 @@ export function ServicesMenuContent({
         value={search}
         onChangeText={onSearch}
       />
-      {groups.map((group) => {
+      {groups.map((group, index) => {
         const items = group.items.filter((item) =>
           item.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
         );
         return items.length ? (
-          <View key={group.title} style={styles.group}>
+          <View key={`${index}-${group.title}`} style={styles.group}>
             <View style={crmStyles.row}>
               <AppText
                 variant="headlineSm"

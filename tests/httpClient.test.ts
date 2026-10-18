@@ -202,4 +202,9 @@ describe('support read-only transport', () => {
     await client.delete('/superadmin/tenants/42/impersonate', { skipStoreContext: true });
     expect(transport).toHaveBeenCalledTimes(2);
   });
+  it('blocks legacy write routes even when the web API uses GET', async () => {
+    await expect(client.get('/customer/delete/12')).rejects.toMatchObject({ kind: 'forbidden' });
+    await expect(client.get('/customer/active/12/0')).rejects.toMatchObject({ kind: 'forbidden' });
+    expect(transport).not.toHaveBeenCalled();
+  });
 });

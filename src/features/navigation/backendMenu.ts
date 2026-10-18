@@ -15,7 +15,11 @@ export interface MobileMenuGroup {
   items: MobileMenuItem[];
 }
 
-export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menus ?? []) {
+export function backendMenuGroups(
+  access?: EffectiveAccess,
+  menus = access?.menus ?? [],
+  translate: (key: string, fallback: string) => string = (_key, fallback) => fallback,
+) {
   const groups: MobileMenuGroup[] = [];
   function destination(route: string) {
     const path = (route.split(/[?#]/)[0] ?? '').replace(/\/$/, '');
@@ -74,6 +78,10 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
       };
     const pharmacy: Record<string, [string, IconName, string]> = {
       '/sales': ['/sales', 'point-of-sale', 'sales.view'],
+      '/stores': ['/stores', 'storefront', 'stores.view'],
+      '/customers': ['/customers', 'group', 'customers.view'],
+      '/stock-entry': ['/entries', 'move-to-inbox', 'entries.view'],
+      '/stock-entry/fast': ['/entries', 'bolt', 'entries.create'],
       '/sales/add': ['/sales?action=create', 'point-of-sale', 'sales.create'],
       '/pos': ['/sales?action=create', 'point-of-sale', 'sales.create'],
       '/products': ['/stock', 'inventory-2', 'products.view'],
@@ -125,10 +133,18 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
     'Icons management': 'Icônes',
     'Status Management': 'Statuts',
     Dashboard: 'Tableau de bord',
-    SelectPlans: 'Abonnements',
-    Stores: 'Établissements',
+    SelectPlans: 'Sélectionner un plan',
+    Stores: 'Magasins',
     Inventory: 'Inventaire',
-    'Stock Entry': 'Entrées de stock',
+    'Stock Entry': 'Entrée',
+    Products: 'Produits',
+    Categories: 'Catégories',
+    Services: 'Services',
+    Orders: 'Commandes',
+    Configuration: 'Configuration',
+    'Finance & Tracking': 'Finance & Suivi',
+    'Point of Sale': 'Point de vente',
+    Billing: 'Facturation',
     Sales: 'Ventes',
     Customers1: 'Clients',
     Customers: 'Clients',
@@ -141,13 +157,24 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
     Roles: 'Rôles',
     Invoices: 'Factures',
   };
+  function labelFor(node: MenuNode, fallback?: string) {
+    // The web uses header || label as the translation key for every role.
+    const key = node.header || node.label;
+    const technical = key.startsWith('menu.') || /^[a-z_]+$/.test(key);
+    return translate(
+      key,
+      labels[key] ??
+        (technical ? (fallback ?? key.replace(/^menu[.]/, '').replace(/[_-]/g, ' ')) : key),
+    );
+  }
   function visit(nodes: MenuNode[], title: string) {
     for (const node of [...nodes].sort((a, b) => a.order - b.order)) {
       if (Number(node.hidden) === 1) continue;
-      const heading = node.children?.length ? (labels[node.label] ?? node.label) : title;
+      const heading = node.children?.length ? labelFor(node) : title;
       const target = node.route ? destination(node.route) : undefined;
       if (target || !node.children?.length) {
-        let group = groups.find((g) => g.title === heading);
+        let group = groups.at(-1);
+        if (group?.title !== heading) group = undefined;
         if (!group) {
           group = { title: heading, items: [] };
           groups.push(group);
@@ -158,13 +185,7 @@ export function backendMenuGroups(access?: EffectiveAccess, menus = access?.menu
           )
         )
           group.items.push({
-            label:
-              labels[node.label] ??
-              (node.label.startsWith('menu.') ||
-              /^[a-z_]+$/.test(node.label) ||
-              ['Products', 'Categories'].includes(node.label)
-                ? (target?.fallback ?? node.label.replace(/^menu[.]/, '').replace(/[_-]/g, ' '))
-                : node.label),
+            label: labelFor(node, target?.fallback),
             href: target?.href ?? node.route ?? `pending-menu-${node.id}`,
             icon: target?.icon ?? 'apps',
             ...(!target

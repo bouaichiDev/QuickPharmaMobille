@@ -84,10 +84,12 @@ export function Button({
       ) : (
         <View style={styles.content}>
           {icon ? <Icon name={icon} size="sm" color={palette.fg} /> : null}
-          <AppText variant="labelLg" color={palette.fg} numberOfLines={1}>
+          <AppText variant="labelLg" color={palette.fg} numberOfLines={1} style={{ flexShrink: 1 }}>
             {label}
           </AppText>
-          {trailingIcon ? <Icon name={trailingIcon} size="sm" color={palette.fg} flipInRTL /> : null}
+          {trailingIcon ? (
+            <Icon name={trailingIcon} size="sm" color={palette.fg} flipInRTL />
+          ) : null}
         </View>
       )}
     </Pressable>
@@ -111,6 +113,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   content: {
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

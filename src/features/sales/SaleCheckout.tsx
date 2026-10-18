@@ -48,15 +48,17 @@ export function SaleCheckout({
   access,
   onClose,
   onCreated,
+  initialCustomer,
 }: {
   access: ReturnType<typeof useAccess>['data'];
   onClose: () => void;
   onCreated: (sale: CompletedSale) => void;
+  initialCustomer?: CrmRecord;
 }) {
   const translation = useTranslation();
   const [step, setStep] = useState(0);
   const [lines, setLines] = useState<CartLine[]>([]);
-  const [selectedCustomer, setCustomer] = useState<CrmRecord>();
+  const [selectedCustomer, setCustomer] = useState<CrmRecord | undefined>(initialCustomer);
   const [picking, setPicking] = useState(false);
   const customers = useSalesCustomers();
   const customer = selectedCustomer ?? customers.data?.find(isCounter);

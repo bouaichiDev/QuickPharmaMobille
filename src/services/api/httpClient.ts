@@ -97,9 +97,10 @@ export function createHttpClient({
     const leavingSupport =
       method === 'delete' && /^\/superadmin\/tenants\/\d+\/impersonate$/.test(path);
     const loggingOut = method === 'post' && /\/logout$/.test(path);
+    const legacyWrite = method === 'get' && /\/(?:delete|active)\//.test(path);
     if (
       context.isReadOnly?.() &&
-      !['get', 'head', 'options'].includes(method) &&
+      (!['get', 'head', 'options'].includes(method) || legacyWrite) &&
       !leavingSupport &&
       !loggingOut
     ) {
