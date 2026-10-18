@@ -1097,3 +1097,39 @@ test.each([0, 1])(
     expect(body.get('side_effects')).toBe('Side effects');
   },
 );
+
+test('manual selling price preserves margin and is saved with decimal commas', async () => {
+  const screen = render(<AddProductScreen />);
+  fillRequired(screen);
+  fireEvent.changeText(screen.getByLabelText(key('buyingPrice')), '100');
+  fireEvent.changeText(screen.getByLabelText(key('taxRate')), '20');
+  fireEvent.press(screen.getByText(key('taxIncluded')));
+  fireEvent.changeText(screen.getByLabelText(key('margin')), '30');
+  fireEvent.changeText(screen.getByLabelText(key('sellingPrice')), '180,00');
+  expect(screen.getByLabelText(key('margin')).props.value).toBe('30');
+  await save(screen);
+  expect(lastBody().get('sellingPrice')).toBe('180.00');
+  expect(lastBody().get('profitMargin')).toBe('30');
+});
+
+test('editing selling price updates the saved product', async () => {
+  enableEditSubmission();
+  const screen = await renderEdit();
+  const savedMargin = screen.getByLabelText(key('margin')).props.value;
+  fireEvent.changeText(screen.getByLabelText(key('sellingPrice')), '200');
+  expect(screen.getByLabelText(key('margin')).props.value).toBe(savedMargin);
+  await save(screen);
+  expect((jest.mocked(httpClient.post).mock.calls[0]![1] as FormData).get('sellingPrice')).toBe(
+    '200.00',
+  );
+});
+
+test.each(['', '-1', 'abc'])('rejects invalid manual selling price %s', async (value) => {
+  const screen = render(<AddProductScreen />);
+  fillRequired(screen);
+  fireEvent.changeText(screen.getByLabelText(key('sellingPrice')), value);
+  fireEvent.press(screen.getByText(key('save')));
+  expect(screen.getByText(key('invalidSellingPrice'))).toBeTruthy();
+  expect(post).not.toHaveBeenCalled();
+  expect(screen.queryByTestId('discounted-selling-price')).toBeNull();
+});
