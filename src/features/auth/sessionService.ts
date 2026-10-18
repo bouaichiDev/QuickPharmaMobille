@@ -25,7 +25,11 @@ function storeFrom(id: string | null, name: string | null): SessionStore | null 
 function isValidSession(value: unknown): value is Session {
   if (!value || typeof value !== 'object') return false;
   const session = value as Partial<Session>;
-  return typeof session.token === 'string' && session.token.length > 0 && typeof session.userId === 'string';
+  return (
+    typeof session.token === 'string' &&
+    session.token.length > 0 &&
+    typeof session.userId === 'string'
+  );
 }
 
 export function sessionFromLogin(data: LoginResponseData, email: string): Session {
@@ -45,6 +49,11 @@ export function sessionFromLogin(data: LoginResponseData, email: string): Sessio
 /** Role and default store may have changed server-side since the last launch. */
 export function refreshSessionFromCheck(session: Session, data: CheckTokenData): Session {
   const defaultStore = storeFrom(data.store_id, data.store_name);
+  const expiredSupport =
+    !!session.supportAccess &&
+    (data.role !== 'SuperAdmin' ||
+      !Number.isFinite(Date.parse(session.supportAccess.expiresAt)) ||
+      Date.parse(session.supportAccess.expiresAt) <= Date.now());
   return {
     ...session,
     menus: Array.isArray(data.permissions) ? (data.permissions as MenuNode[]) : undefined,
@@ -52,7 +61,8 @@ export function refreshSessionFromCheck(session: Session, data: CheckTokenData):
     role: data.role,
     defaultRoute: data.default_route,
     defaultStore,
-    activeStore: session.activeStore ?? defaultStore,
+    activeStore: expiredSupport ? defaultStore : (session.activeStore ?? defaultStore),
+    supportAccess: expiredSupport ? undefined : session.supportAccess,
   };
 }
 

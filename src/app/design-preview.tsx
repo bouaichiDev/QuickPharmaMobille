@@ -1,4 +1,5 @@
 import { StockVisualPreview } from '@/features/catalogue/StockVisualPreview';
+import { PlatformPreview } from '@/features/superadmin/PlatformPreview';
 import { SalesVisualPreview } from '@/features/sales/SalesVisualPreview';
 import { ClientServiceCard } from '@/features/crm/components/ClientServiceCard';
 import { DraftSessionPhotos, type DraftPhoto } from '@/features/crm/components/DraftSessionPhotos';
@@ -88,6 +89,8 @@ export default function DesignPreview() {
     return cache;
   });
   if (!__DEV__) return <Redirect href="/" />;
+  if (params.view?.startsWith('sa-'))
+    return <PlatformPreview key={params.view} initial={params.view} />;
   if (params.view?.startsWith('stock-'))
     return <StockVisualPreview key={params.view} view={params.view} />;
   if (params.view?.startsWith('pos-'))

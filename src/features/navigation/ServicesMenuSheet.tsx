@@ -25,40 +25,56 @@ export function ServicesMenuSheet({ visible, onClose }: { visible: boolean; onCl
     setSearch('');
     router.push(href as Href);
   }
+  const support = !!session?.supportAccess;
+  const menuAccess =
+    support && access.data
+      ? { ...access.data, role: { ...access.data.role, code: 'Assistance' } }
+      : access.data;
   const groups: MobileMenuGroup[] = [
-    ...backendMenuGroups(access.data, session?.menus ?? access.data?.menus ?? []),
-    {
-      title: tDynamic('mobile.menu.account', 'Mon compte'),
-      items: [
-        {
-          label: tDynamic('mobile.menu.profile', 'Profil et réglages'),
-          icon: 'person-outline',
-          href: '/profile',
-        },
-        {
-          label: t('mobile.nav.notifications'),
-          icon: 'notifications-none',
-          href: '/notifications',
-        },
-        ...(can(access.data, 'subscription.view')
-          ? [
+    ...backendMenuGroups(
+      menuAccess,
+      support ? (access.data?.menus ?? []) : (session?.menus ?? access.data?.menus ?? []),
+    ),
+    ...(!support
+      ? [
+          {
+            title: tDynamic('mobile.menu.account', 'Mon compte'),
+            items: [
               {
-                label: t('mobile.plans.title'),
-                icon: 'workspace-premium' as IconName,
-                href: '/plans',
+                label: tDynamic('mobile.menu.profile', 'Profil et réglages'),
+                icon: 'person-outline' as IconName,
+                href: '/profile',
               },
-            ]
-          : []),
-      ],
-    },
+              {
+                label: t('mobile.nav.notifications'),
+                icon: 'notifications-none' as IconName,
+                href: '/notifications',
+              },
+              ...(can(access.data, 'subscription.view')
+                ? [
+                    {
+                      label: t('mobile.plans.title'),
+                      icon: 'workspace-premium' as IconName,
+                      href: '/plans',
+                    },
+                  ]
+                : []),
+            ],
+          },
+        ]
+      : []),
   ];
   return (
     <BottomSheet
       visible={visible}
       onClose={onClose}
       tall
-      title={tDynamic('mobile.menu.title', 'Modules & Services CRM')}
-      subtitle={`${session?.activeStore?.name ?? 'QuickPharma'} · ${access.data?.role.code ?? session?.role ?? ''}`}
+      title={
+        !support && access.data?.role.code === 'SuperAdmin'
+          ? tDynamic('mobile.menu.superadmin.title', 'Administration')
+          : tDynamic('mobile.menu.title', 'Modules & Services CRM')
+      }
+      subtitle={`${session?.activeStore?.name ?? 'QuickPharma'} · ${support ? 'Lecture seule' : (access.data?.role.code ?? session?.role ?? '')}`}
     >
       {access.isLoading ? (
         <SkeletonCards count={2} />
@@ -86,8 +102,8 @@ export function ServicesMenuContent({
     <>
       <TextField
         appearance="crm"
-        placeholder="Rechercher une fonction, un soin…"
-        label={tDynamic('mobile.menu.search', 'Rechercher un service')}
+        placeholder="Rechercher une fonction…"
+        label={tDynamic('mobile.menu.searchMenu', 'Rechercher un menu')}
         value={search}
         onChangeText={onSearch}
       />

@@ -17,6 +17,39 @@ const menu = (overrides: Partial<MenuNode>): MenuNode => ({
   ...overrides,
 });
 describe('Plus menu from the effective backend tree', () => {
+  it('uses web labels and keeps an unsupported platform container as a heading', () => {
+    const groups = backendMenuGroups(
+      makeAccess({
+        role: { id: 1, code: 'SuperAdmin', scope: 'global' },
+        permissions: ['platform.metrics.view', 'platform.tenants.manage'],
+        menus: [
+          menu({
+            label: 'Platform',
+            route: '/platform',
+            children: [
+              menu({ id: 2, label: 'Health', route: '/superadmin/health' }),
+              menu({ id: 3, label: 'Tenants', route: '/superadmin/tenants' }),
+            ],
+          }),
+        ],
+      }),
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.title).toBe('Plateforme');
+    expect(groups[0]?.items.map((i) => i.label)).toEqual(['Santé plateforme', 'Magasins']);
+  });
+  it('does not inject a stock shortcut into the SuperAdmin production menu', () => {
+    const access = makeAccess({
+      role: { id: 1, code: 'SuperAdmin', scope: 'global' },
+      permissions: ['products.view', 'stock.locations.manage'],
+      menus: [],
+    });
+    expect(backendMenuGroups(access)).toEqual([]);
+    expect(
+      backendMenuGroups(access, [menu({ route: '/locations', label: 'Emplacements' })])[0]
+        ?.items[0],
+    ).toMatchObject({ href: '/stock?panel=locations', label: 'Emplacements' });
+  });
   it('does not invent an entry even when the role has its permission', () => {
     expect(
       backendMenuGroups(makeAccess({ permissions: ['services.sessions.view'], menus: [] })),
