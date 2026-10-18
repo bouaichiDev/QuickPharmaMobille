@@ -1,3 +1,4 @@
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,6 +32,7 @@ export function CrmRevenueGoal({
   const [error, setError] = useState('');
   const currency = useCurrency();
   const { locale } = useTranslation();
+  const { needsReflow } = useResponsiveLayout();
   useEffect(() => {
     let current = true;
     if (previewGoal !== undefined) {
@@ -58,7 +60,14 @@ export function CrmRevenueGoal({
         }}
         style={{ gap: 6 }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: 8,
+            flexWrap: needsReflow ? 'wrap' : undefined,
+          }}
+        >
           <AppText variant="labelSm" color="onPrimary">
             Objectif : {goal ? formatAmount(goal, currency, locale) : 'Définir un objectif'}
           </AppText>

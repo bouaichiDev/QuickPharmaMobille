@@ -95,3 +95,20 @@ src/theme        tokens extraits de Stitch
 tests/           tests unitaires
 docs/            documentation
 ```
+
+## Synchronisation Git
+
+Pour comparer la branche locale avec sa branche distante :
+
+```bash
+git fetch origin
+git status
+```
+
+Sur `main`, le message `Your branch is up to date with 'origin/main'` confirme que les commits locaux et distants correspondent. Le message `nothing to commit, working tree clean` confirme aussi l'absence de modifications locales.
+
+Si la branche locale est en retard, la mettre à jour sans créer de commit de fusion :
+
+```bash
+git pull --ff-only origin main
+```

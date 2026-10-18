@@ -205,6 +205,7 @@ export const fr = {
         sellingPrice: 'Prix de vente',
         calculated: 'Calcul automatique',
         discount: 'Remise accordée (%)',
+        sellingPriceAfterDiscount: 'Prix de vente après remise',
         quantity: 'Quantité initiale',
         initialQuantityHint: 'Requis si le stock initial est supérieur à zéro',
         supplier: 'Fournisseur',
@@ -253,7 +254,10 @@ export const fr = {
         save: 'Enregistrer le produit',
         saveSuccessTitle: 'Produit créé',
         saveSuccessMessage: 'Le produit [id] a été créé.',
+        updateSuccessTitle: 'Produit modifié',
+        updateSuccessMessage: 'Le produit [id] a été modifié.',
         saveErrorTitle: 'Échec de la création',
+        updateErrorTitle: 'Échec de la modification du produit',
         done: 'Terminé',
         featureUnavailableTitle: 'Fonction indisponible',
         featureUnavailableMessage:

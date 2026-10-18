@@ -3,6 +3,7 @@ import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { colors, shadows, spacing, type ColorToken } from '@/theme';
 
 import { AppText } from './AppText';
+import { useResponsiveLayout } from './useResponsiveLayout';
 import { Button } from './Button';
 import { Icon, type IconName } from './Icon';
 
@@ -25,6 +26,7 @@ const variants: Record<
 };
 
 export function AlertDialog({ alert, onClose }: { alert: AlertDialogState; onClose: () => void }) {
+  const { needsReflow } = useResponsiveLayout();
   const palette = variants[alert.variant];
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -52,10 +54,17 @@ export function AlertDialog({ alert, onClose }: { alert: AlertDialogState; onClo
             >
               {alert.message}
             </AppText>
+            {needsReflow ? (
+              <View style={styles.adaptiveFooter}>
+                <Button label={alert.actionLabel} onPress={onClose} />
+              </View>
+            ) : null}
           </ScrollView>
-          <View style={styles.footer}>
-            <Button label={alert.actionLabel} onPress={onClose} />
-          </View>
+          {!needsReflow ? (
+            <View style={styles.footer}>
+              <Button label={alert.actionLabel} onPress={onClose} />
+            </View>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -63,6 +72,7 @@ export function AlertDialog({ alert, onClose }: { alert: AlertDialogState; onClo
 }
 
 const styles = StyleSheet.create({
+  adaptiveFooter: { alignSelf: 'stretch', paddingTop: spacing.lg },
   backdrop: {
     flex: 1,
     justifyContent: 'center',

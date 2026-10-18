@@ -199,6 +199,7 @@ export const ar: TranslationDictionary = {
         sellingPrice: 'سعر البيع',
         calculated: 'يُحسب تلقائياً',
         discount: 'الخصم (%)',
+        sellingPriceAfterDiscount: 'سعر البيع بعد الخصم',
         quantity: 'الكمية الأولية',
         initialQuantityHint: 'مطلوب إذا كانت كمية المخزون الأولية أكبر من صفر',
         supplier: 'المورّد',
@@ -247,7 +248,10 @@ export const ar: TranslationDictionary = {
         save: 'حفظ المنتج',
         saveSuccessTitle: 'تم إنشاء المنتج',
         saveSuccessMessage: 'تم إنشاء المنتج [id].',
+        updateSuccessTitle: 'تم تعديل المنتج',
+        updateSuccessMessage: 'تم تعديل المنتج [id].',
         saveErrorTitle: 'تعذر إنشاء المنتج',
+        updateErrorTitle: 'فشل تعديل المنتج',
         done: 'تم',
         featureUnavailableTitle: 'الميزة غير متاحة',
         featureUnavailableMessage:

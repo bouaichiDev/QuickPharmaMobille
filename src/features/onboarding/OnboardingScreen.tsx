@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Logo } from '@/components/ui/Logo';
 import { Screen } from '@/components/ui/Screen';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { preferenceKeys } from '@/constants/storageKeys';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TranslationKey } from '@/i18n/translate';
@@ -14,8 +15,16 @@ import { preferences } from '@/services/storage/preferences';
 import { colors, radii, spacing } from '@/theme';
 
 const SLIDES: { icon: IconName; title: TranslationKey; body: TranslationKey }[] = [
-  { icon: 'insights', title: 'mobile.onboarding.slide1Title', body: 'mobile.onboarding.slide1Body' },
-  { icon: 'notifications-active', title: 'mobile.onboarding.slide2Title', body: 'mobile.onboarding.slide2Body' },
+  {
+    icon: 'insights',
+    title: 'mobile.onboarding.slide1Title',
+    body: 'mobile.onboarding.slide1Body',
+  },
+  {
+    icon: 'notifications-active',
+    title: 'mobile.onboarding.slide2Title',
+    body: 'mobile.onboarding.slide2Body',
+  },
   { icon: 'devices', title: 'mobile.onboarding.slide3Title', body: 'mobile.onboarding.slide3Body' },
 ];
 
@@ -26,6 +35,7 @@ export async function markOnboardingDone(): Promise<void> {
 export function OnboardingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { needsReflow } = useResponsiveLayout();
   const [index, setIndex] = useState(0);
   const slide = SLIDES[index]!;
   const last = index === SLIDES.length - 1;
@@ -36,7 +46,12 @@ export function OnboardingScreen() {
   }
 
   return (
-    <Screen scroll={false} edges={['top', 'bottom']} contentStyle={styles.content}>
+    <Screen
+      scroll={needsReflow}
+      edges={['top', 'bottom']}
+      contentStyle={styles.content}
+      innerStyle={needsReflow ? styles.adaptiveContent : undefined}
+    >
       <View style={styles.top}>
         <Logo width={150} />
         {!last ? (
@@ -63,7 +78,10 @@ export function OnboardingScreen() {
       <View style={styles.bottom}>
         <View style={styles.dots}>
           {SLIDES.map((_, dotIndex) => (
-            <View key={dotIndex} style={[styles.dot, dotIndex === index ? styles.dotActive : null]} />
+            <View
+              key={dotIndex}
+              style={[styles.dot, dotIndex === index ? styles.dotActive : null]}
+            />
           ))}
         </View>
         <Button
@@ -77,6 +95,7 @@ export function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  adaptiveContent: { flexGrow: 1, justifyContent: 'space-between', gap: spacing.xl },
   content: {
     justifyContent: 'space-between',
   },

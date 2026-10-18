@@ -201,6 +201,7 @@ export const en: TranslationDictionary = {
         sellingPrice: 'Selling price',
         calculated: 'Calculated automatically',
         discount: 'Discount (%)',
+        sellingPriceAfterDiscount: 'Selling price after discount',
         quantity: 'Initial quantity',
         initialQuantityHint: 'Required when initial stock is greater than zero',
         supplier: 'Supplier',
@@ -249,7 +250,10 @@ export const en: TranslationDictionary = {
         save: 'Save product',
         saveSuccessTitle: 'Product created',
         saveSuccessMessage: 'Product [id] was created.',
+        updateSuccessTitle: 'Product updated',
+        updateSuccessMessage: 'Product [id] was updated.',
         saveErrorTitle: 'Product creation failed',
+        updateErrorTitle: 'Product update failed',
         done: 'Done',
         featureUnavailableTitle: 'Feature unavailable',
         featureUnavailableMessage:

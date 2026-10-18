@@ -1,4 +1,5 @@
 import { ResponsiveList } from '@/components/ui/ResponsiveGrid';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -56,6 +57,7 @@ export function SaleCheckout({
   initialCustomer?: CrmRecord;
 }) {
   const translation = useTranslation();
+  const { needsReflow } = useResponsiveLayout();
   const [step, setStep] = useState(0);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [selectedCustomer, setCustomer] = useState<CrmRecord | undefined>(initialCustomer);
@@ -529,7 +531,7 @@ export function SaleCheckout({
                   style={[
                     s.card,
                     {
-                      width: '48%',
+                      width: needsReflow ? '100%' : '48%',
                       minHeight: 98,
                       borderColor: paymentType === itemId(row) ? pos.blue : '#fff',
                       borderWidth: 2,

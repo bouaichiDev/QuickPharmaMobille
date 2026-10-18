@@ -3,8 +3,11 @@ import { FlatList, View, useWindowDimensions, type FlatListProps } from 'react-n
 
 const gap = 12;
 
-export function gridColumns(width: number, padding = 0) {
-  return width < 768 ? 1 : Math.min(3, Math.max(1, Math.floor((width - padding * 2 + gap) / 352)));
+export function gridColumns(width: number, padding = 0, fontScale = 1) {
+  const scale = fontScale > 1.2 ? fontScale : 1;
+  return width < 768
+    ? 1
+    : Math.min(3, Math.max(1, Math.floor((width - padding * 2 + gap) / (340 * scale + gap))));
 }
 
 /** Measure the available container, including split-screen and orientation changes. */
@@ -19,7 +22,11 @@ export function ResponsiveGrid({
   const [measuredWidth, setMeasuredWidth] = useState<number>();
   const width = measuredWidth ?? Math.max(0, window.width - 32);
   const items = Children.toArray(children);
-  const columns = Math.min(Math.max(1, items.length), maxColumns, gridColumns(width + 32, 16));
+  const columns = Math.min(
+    Math.max(1, items.length),
+    maxColumns,
+    gridColumns(width + 32, 16, window.fontScale),
+  );
   const cellWidth = Math.max(0, (width - gap * (columns - 1)) / columns);
   return (
     <View
@@ -48,7 +55,7 @@ export function ResponsiveList<T>({
   const window = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState<number>();
   const width = measuredWidth ?? window.width;
-  const columns = gridColumns(width, 16);
+  const columns = gridColumns(width, 16, window.fontScale);
   const cellWidth = Math.max(0, (width - 32 - gap * (columns - 1)) / columns);
   return (
     <FlatList

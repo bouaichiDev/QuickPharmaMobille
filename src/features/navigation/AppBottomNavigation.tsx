@@ -2,6 +2,7 @@ import { router, usePathname, type Href } from 'expo-router';
 import { Pressable, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { colors } from '@/theme';
 import { useAccess } from '@/features/access/useAccess';
@@ -24,6 +25,7 @@ export function AppBottomNavigation({
   activePath?: string;
 }) {
   const { t } = useTranslation();
+  const { needsReflow } = useResponsiveLayout();
   const notifications = useNotificationsList();
   const alerts = useAlertsDashboard();
   const unread =
@@ -108,9 +110,9 @@ export function AppBottomNavigation({
             </View>
             <AppText
               variant="labelSm"
-              numberOfLines={1}
+              numberOfLines={needsReflow ? undefined : 1}
               color={active ? 'primary' : 'onSurfaceVariant'}
-              style={{ fontSize: 10 }}
+              style={[{ fontSize: 10 }, needsReflow && { maxWidth: '100%', textAlign: 'center' }]}
             >
               {item.label}
             </AppText>
@@ -124,7 +126,10 @@ export function AppBottomNavigation({
         onPress={onMore}
       >
         <Icon name="more-horiz" size={23} color="onSurfaceVariant" />
-        <AppText variant="labelSm" style={{ fontSize: 10 }}>
+        <AppText
+          variant="labelSm"
+          style={[{ fontSize: 10 }, needsReflow && { maxWidth: '100%', textAlign: 'center' }]}
+        >
           {t('mobile.nav.more')}
         </AppText>
       </Pressable>

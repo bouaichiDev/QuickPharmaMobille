@@ -1,4 +1,5 @@
 import { ResponsiveGrid } from '@/components/ui/ResponsiveGrid';
+import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -168,9 +169,11 @@ export function CrmDashboardView({
   const currency = useCurrency();
   const amount = (value: unknown) => formatAmount(value, currency, locale);
   const number = (value: unknown) => formatNumber(value, locale);
+  const { narrow, largeText } = useResponsiveLayout();
+  const stackCards = narrow || largeText;
   const metric = (label: string, value: string, icon: IconName, key: string) => (
     <Pressable
-      style={styles.metric}
+      style={stackCards ? [styles.metric, styles.stackedCard] : styles.metric}
       onPress={() => onOpen(key)}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -294,7 +297,11 @@ export function CrmDashboardView({
               return (
                 <Pressable
                   key={key}
-                  style={[styles.shortcut, index === 0 && styles.primaryShortcut]}
+                  style={[
+                    styles.shortcut,
+                    stackCards && styles.stackedCard,
+                    index === 0 && styles.primaryShortcut,
+                  ]}
                   onPress={() => onOpen(key, true)}
                   accessibilityRole="button"
                   accessibilityLabel={info[0]}
@@ -402,6 +409,7 @@ export function CrmDashboardView({
   );
 }
 const styles = StyleSheet.create({
+  stackedCard: { width: '100%' },
   period: {
     ...crmStyles.row,
     backgroundColor: colors.surfaceContainerLow,

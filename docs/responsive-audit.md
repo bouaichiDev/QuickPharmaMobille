@@ -1,62 +1,61 @@
-﻿# Responsive layout audit
+﻿# Responsive changes with the default phone layout preserved
 
 Date: 2026-10-16 (Africa/Casablanca).
+Branch: `fix/responsive-layout`.
+Baseline: checkpoint `5449a2f`.
 
-## Verdict
+## Constraint
 
-The code contains responsive foundations, but the app cannot currently be certified as responsive on all devices. This audit found concrete constraints needing remediation and identified visual risks that require device verification. No production layout was changed in this audit.
+Keep the existing Galaxy A70-style portrait design as the default. No specific physical-device viewport was measured, so the protected baseline covers common portrait widths of 360, 384, 393, 412, and 430 logical pixels at standard text size. The 412x915 test viewport is representative, not a claim about the connected phone's actual display settings.
 
-## What was checked
+The original spacing, button heights, field arrangement, dialog padding, card widths, onboarding illustration, typography, and native app configuration remain the default. Alternate styles are conditional rather than replacements for the baseline styles.
 
-Reviewed shared Screen, Card, TextField, Button, ResponsiveGrid/ResponsiveList, selection/confirmation/alert dialogs, bottom sheets, navigation/PageLayers, and layout styles in authentication, onboarding, dashboard, profile, notifications, subscriptions, product entry, catalogue/inventory, CRM, and sales/receipts. Source review is not an end-to-end visual test of every screen.
+## Adaptation rules
 
-Executed 12 focused tests of the real shared grid: measured container widths corresponding to 320, 360, 390, 414, 600, 768, 820, 1024, 1280, and 1440 logical pixels; shrinking a tablet container into a narrow split-screen pane; and limiting desktop columns. All passed. These verify sizing arithmetic and React updates, not native text measurement, Yoga layout, screenshots, or touch ergonomics. ResponsiveList and feature-specific tablet layouts were reviewed in code but were not visually exercised by these tests.
+`src/components/ui/useResponsiveLayout.ts` centralizes the conditions:
 
-## Findings
+- Width below 360 logical pixels: compact layout.
+- Window at least 500 pixels wide and below 500 pixels high: short/landscape layout. Requiring the width avoids switching a normal portrait phone just because its keyboard reduces usable height.
+- Text scale above 1.2: enlarged-text layout.
+- Landscape windows gain side-safe-area edges. Portrait safe-area edges are preserved.
 
-| Priority | Area | Evidence and implication | Suggested change |
-| --- | --- | --- | --- |
-| High | Onboarding: short landscape screens / large text | `src/features/onboarding/OnboardingScreen.tsx:39` disables scrolling. The center contains a fixed 160 px illustration plus title/body, with top and bottom controls. Content has no scroll escape when its combined height exceeds available height. | Permit vertical scrolling or adapt the illustration and spacing to available height while retaining reachable actions. |
-| High | Confirmation dialogs | `src/components/ui/ConfirmDialog.tsx:34` renders title, message, and two actions in an unbounded card. There is no ScrollView or maximum height. Large text or a long translated message can exceed a short viewport. | Bound the card height and scroll the content; stack actions on narrow screens or at large font scales. |
-| Medium | Add Product on narrow phones | `src/features/stores/screens/AddProductScreen.tsx:1053` keeps status/currency in an unwrapped row. At line 1094, paired fields always remain side by side; actions at line 1201 do too. At 320 px the card's paired fields have roughly 123 px each before input padding. Long supplier names are explicitly one line. | Reflow fields, status text, and actions based on available container width and font scale. |
-| Medium | Shared action labels | `src/components/ui/Button.tsx:87` forces one line. Narrow paired actions, translations, and large fonts can truncate or overflow the visible label; actual severity needs font measurement. Accessibility labels retain the full label. | Allow wrapping/minimum height growth and ensure text can shrink inside the row without overflowing. |
-| Medium | CRM dashboard small cards | `src/features/dashboard/components/CrmDashboard.tsx:422` uses wrapping rows with 48% card widths. It has no font-scale-aware single-column option, so metric cards can remain cramped even as text grows. | Switch to a container-aware grid that also considers font scale. |
-| Medium | RTL consistency | Native RTL switching exists in `src/i18n/rtl.ts`, but TextField still uses physical `marginLeft` and `marginRight` at lines 79 and 103. Several CRM/stock/sales back arrows omit the shared icon's RTL flipping option. | Use start/end spacing and consistently mirror directional controls. Verify Arabic layouts visually after reload. |
-| Verify | Keyboard and landscape safe areas | Screen/CrmPage avoid the keyboard explicitly on iOS only; Android depends on window behavior. Some routes request only top safe-area protection. The app shell does reserve bottom navigation space, so bottom overlap must not be assumed from a child screen alone. | Test Android resize behavior, short landscape, cutouts, bottom gestures, and keyboard-visible actions on real/emulated devices. |
+Grid column calculations remain identical through 120% text scale; above that they reserve more width per card. Existing tablet breakpoints remain in place. Normal text on a large screen does not receive a wholesale redesign.
 
-The first two findings follow directly from absent scrolling/height bounds. Other rows identify source-level constraints and likely pressure points; they are not screenshot-confirmed clipping defects.
+## Implemented conditional behavior
 
-## Existing strengths
+- Add Product stacks paired fields, barcode/scan controls, and actions only under the conditions above. Stacked fields have natural height/full width. Status text and category/supplier names can wrap, and the photo-add tile can grow vertically.
+- Shared buttons allow multiline labels and vertical growth only in the alternate layout.
+- Onboarding scrolls only in the alternate layout; its existing normal portrait arrangement remains intact.
+- Confirmation dialogs retain their existing default card/padding/action row. Alternate layouts cap height, scroll all content/actions, and stack actions. A default-sized dialog also gets a scroll escape if actual measured content exceeds the window height.
+- Alerts retain their original default footer placement. The action moves inside the scrollable area only in the alternate layout.
+- CRM dashboard cards switch to full width on very narrow screens or with enlarged text. CRM detail fields and sales/credit payment choices use full width when reflow is needed.
+- Navigation labels and the CRM revenue goal row can wrap in alternate layouts.
+- Screen and CRM page overlays add side-safe-area edges only in landscape.
 
-- Screen scrolls by default, fills available space, centers most content, and caps common reading/form width at 560 px.
-- ResponsiveGrid measures its actual container and reflows when that measurement changes; ResponsiveList adjusts its column count and keeps long lists virtualized.
-- Catalogue has tablet master/detail behavior from 768 px; inventory also checks window width.
-- Auth forms are scrollable, with keyboard avoidance and wrapping sign-up links.
-- Profile, notifications, and subscription flows use shared scrolling containers; the plan comparison table supports horizontal scrolling.
-- Shared selection dialogs cap width/height and scroll their body; the new AlertDialog also bounds height and scrolls its message.
-- Bottom navigation accounts for bottom safe-area insets and PageLayers reserves its layout space.
-- Receipt preview uses a 320 px target with `maxWidth: '100%'`. Off-screen export's fixed 320 px canvas is intentional and was not counted as a viewport defect.
-- Font scaling is not globally disabled in AppText, so layout needs to accommodate it rather than hide it.
+## Automated baseline protection
 
-## Device matrix still required
+`tests/responsiveBaseline.test.tsx` verifies:
 
-| Surface | Representative logical viewport | Checks |
-| --- | --- | --- |
-| Small phone | 320 x 568, 360 x 640 | Forms, action labels, status rows, charts, navigation |
-| Standard/large phone | 390 x 844, 430 x 932 | Safe areas, scroll reachability, long data |
-| Landscape phone | 568 x 320, 844 x 390 | Onboarding, dialogs, keyboard, cutouts |
-| Tablet | 768 x 1024, 820 x 1180, 1024 x 768 | Catalogue detail panes, forms, list density |
-| Desktop / large tablet | 1280 x 800, 1440 x 900 | Max widths, grids, long dialogs |
-| Split screen | Resize from tablet to 360 px pane | Reflow, retained data, independent scroll panes |
+- Default button height (48), single-line labels, dialog padding (24), gap (12), maximum width (420), paired actions, and absence of a new scroll wrapper at 360, 384, 393, 412, and 430 px portrait.
+- Original non-scrolling onboarding and its 160x160 illustration at a representative 412x915 viewport.
+- Original portrait safe-area edges and alert footer placement, restored after rotating back.
+- Keyboard-reduced portrait height does not activate reflow.
+- Short landscape, 320 px compact, 200% text, measured dialog overflow, and slide retention during rotation.
 
-Repeat relevant cases with 100%, 150%, and 200% text; French, English, Spanish, Arabic/RTL; keyboard open; long names/prices/messages; empty/loading/error states. These are requested verification targets, not completed screenshot tests.
+`tests/AddProductScreen.test.tsx` checks default paired field rows/save-button proportions at 360, 393, 412, and 430 px, alternate layouts at 320 px/200% text, and draft preservation during resizing.
 
-The browser runtime has repeatedly failed to start with the Windows `helper_sandbox_lock_failed` error in this session. No device farm or simulator control is connected. A working browser/device session is needed to complete visual certification.
-
-## Automated verification
+`tests/responsiveLayout.test.tsx` checks shared grids at 320–1440 px, unchanged standard text-scale columns, enlarged text, container resizing, and column limits.
 
 ```text
-npm.cmd test -- --runInBand --testTimeout=30000 tests/responsiveLayout.test.tsx
+npm.cmd test -- --runInBand --testTimeout=30000 --silent
 npm.cmd run typecheck
-npx.cmd eslint tests/responsiveLayout.test.tsx
+npm.cmd run lint
 ```
+
+## Verification limits
+
+These tests check component styles, sizing calculations, actions, and retained state. They do not perform native layout or screenshot comparisons. They protect the specified default styles but do not establish pixel-for-pixel equivalence on a physical Galaxy A70.
+
+The browser runtime failed repeatedly with Windows `helper_sandbox_lock_failed` earlier in this session, so real-device/browser visual verification is still required. Verify the default A70 portrait view first, then 320 px, landscape, tablet, split-screen, 150%/200% text, long messages, keyboard-visible fields, and Arabic/RTL.
+
+The earlier app-wide audit also identified RTL-spacing consistency, chart-label readability, and Android keyboard configuration for further device-specific review. This iteration does not reapply the discarded global style/native configuration changes. Existing product numeric/date/photo lifecycle `GAP` tests document separate issues and are unrelated to these responsive changes.
