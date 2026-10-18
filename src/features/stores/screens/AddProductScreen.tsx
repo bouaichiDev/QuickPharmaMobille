@@ -70,6 +70,7 @@ function existingPhotoNames(images?: string): string[] {
 const MAX_PRODUCT_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 interface ProductFormValues {
+  sellingPrice: string | null;
   productName: string;
   sku: string;
   description: string;
@@ -93,6 +94,7 @@ interface ProductFormValues {
 }
 
 const INITIAL_VALUES: ProductFormValues = {
+  sellingPrice: null,
   productName: '',
   sku: '',
   description: '',
@@ -494,9 +496,11 @@ export function AddProductScreen() {
   const skuError =
     submitted && !form.sku.trim() ? t('mobile.products.form.skuRequired') : undefined;
   const sellingPrice =
-    editingId && !priceChanged
-      ? savedSellingPrice
-      : calculateSellingPrice(form.buyingPrice, form.margin, form.taxRate, form.taxIncluded);
+    form.sellingPrice !== null
+      ? Number(decimalValue(form.sellingPrice))
+      : editingId && !priceChanged
+        ? savedSellingPrice
+        : calculateSellingPrice(form.buyingPrice, form.margin, form.taxRate, form.taxIncluded);
 
   function updateField<Key extends keyof ProductFormValues>(
     key: Key,
@@ -504,7 +508,22 @@ export function AddProductScreen() {
   ) {
     if (key === 'buyingPrice' || key === 'margin' || key === 'taxRate' || key === 'taxIncluded')
       setPriceChanged(true);
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => ({
+      ...current,
+      ...(key === 'buyingPrice' || key === 'margin' || key === 'taxRate' || key === 'taxIncluded'
+        ? { sellingPrice: null }
+        : {}),
+      [key]: value,
+    }));
+  }
+
+  const sellingPriceInvalid =
+    (form.sellingPrice !== null && !decimalValue(form.sellingPrice)) ||
+    !Number.isFinite(sellingPrice) ||
+    sellingPrice < 0;
+
+  function updateSellingPrice(value: string) {
+    setForm((current) => ({ ...current, sellingPrice: value }));
   }
 
   function fillTestData() {
@@ -561,7 +580,7 @@ export function AddProductScreen() {
   }
   async function saveProduct() {
     setSubmitted(true);
-    if (!form.productName.trim() || !form.sku.trim()) return;
+    if (!form.productName.trim() || !form.sku.trim() || sellingPriceInvalid) return;
     if (form.availability === null) {
       showAlert(
         t(
@@ -582,7 +601,7 @@ export function AddProductScreen() {
     }
 
     try {
-      const result = await (editingId ? updateProduct : createProduct).mutateAsync({
+      await (editingId ? updateProduct : createProduct).mutateAsync({
         ...productCreateInputFrom(form, sellingPrice),
         files: productPhotos,
         createdBy: profileQuery.data?.id === undefined ? undefined : String(profileQuery.data.id),
@@ -600,7 +619,7 @@ export function AddProductScreen() {
           editingId
             ? 'mobile.products.form.updateSuccessMessage'
             : 'mobile.products.form.saveSuccessMessage',
-          { id: result.id },
+          { name: form.productName.trim() },
         ),
         [{ text: t('mobile.products.form.done'), onPress: returnToProducts }],
         'success',
@@ -677,14 +696,12 @@ export function AddProductScreen() {
     }
   }
 
-  const formattedSellingPrice = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(sellingPrice);
-
   const discountRate = Number(decimalValue(form.discount));
   const formattedDiscountedPrice =
-    Number.isFinite(discountRate) && discountRate >= 0 && discountRate <= 100
+    !sellingPriceInvalid &&
+    Number.isFinite(discountRate) &&
+    discountRate >= 0 &&
+    discountRate <= 100
       ? new Intl.NumberFormat(locale, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
@@ -879,11 +896,15 @@ export function AddProductScreen() {
             >
               <FormField
                 label={t('mobile.products.form.sellingPrice')}
-                value={formattedSellingPrice}
-                onChangeText={() => undefined}
-                editable={false}
+                value={form.sellingPrice ?? sellingPrice.toFixed(2)}
+                onChangeText={updateSellingPrice}
+                keyboardType="decimal-pad"
+                error={
+                  submitted && sellingPriceInvalid
+                    ? t('mobile.products.form.invalidSellingPrice')
+                    : undefined
+                }
                 suffix={currency ?? undefined}
-                helper={t('mobile.products.form.calculated')}
               />
             </View>
           </View>
