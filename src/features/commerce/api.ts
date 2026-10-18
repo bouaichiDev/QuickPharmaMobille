@@ -36,6 +36,12 @@ export const compact = (params: Row) =>
     Object.entries(params).filter(([, v]) => v !== '' && v !== null && v !== undefined),
   );
 export const commerceApi = {
+  async validateOrder(id: string) {
+    return payload(await apiGet(`/commande/valide/${encodeURIComponent(id)}`));
+  },
+  async archiveSupplier(id: string) {
+    return payload(await apiGet(`/provider/delete/${encodeURIComponent(id)}`));
+  },
   /** Legacy web route mutates via GET. Never use it as a query/prefetch. */
   async archiveCustomer(id: string) {
     return payload(await apiGet(`/customer/delete/${encodeURIComponent(id)}`));

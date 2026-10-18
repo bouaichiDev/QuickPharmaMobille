@@ -1,8 +1,8 @@
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
-  Pressable,
   StyleSheet,
   View,
   type ListRenderItem,
@@ -24,7 +24,10 @@ import { useSessionStore } from '@/features/auth/sessionStore';
 import { useDebounce } from '@/features/catalogue/StockDesign';
 import { itemId, itemName } from '@/features/crm/crmApi';
 import { commerceApi, type Row } from './api';
+import { useTranslation } from '@/i18n/useTranslation';
+import { translatedReference } from './entryDefaults';
 export { AppText, Button, TextField, ResponsiveGrid, ErrorState, SkeletonCards, useDebounce };
+export { SearchFilterRow } from '@/components/ui/SearchFilterRow';
 export const ui = StyleSheet.create({
   stack: { gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -61,11 +64,13 @@ export function CommerceScreen({
   children,
   scroll = true,
   onBack,
+  footer,
 }: {
   title: string;
   children: ReactNode;
   scroll?: boolean;
   onBack?: () => void;
+  footer?: ReactNode;
 }) {
   const focused = useIsFocused();
   useEffect(() => {
@@ -80,27 +85,30 @@ export function CommerceScreen({
     <Screen
       scroll={scroll}
       keyboard
+      footer={
+        footer ? (
+          <View
+            testID="commerce-fixed-footer"
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              backgroundColor: '#f8f9ff',
+              borderTopWidth: 1,
+              borderTopColor: '#edf0f8',
+              flexShrink: 0,
+            }}
+          >
+            {footer}
+          </View>
+        ) : undefined
+      }
       innerStyle={{ maxWidth: '100%' }}
       contentStyle={scroll ? { paddingBottom: 24 } : { padding: 0 }}
       header={
-        <View style={ui.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            onPress={
-              onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/home')))
-            }
-            style={{ padding: 10 }}
-          >
-            <Icon name="arrow-back" color="primary" />
-          </Pressable>
-          <View style={ui.grow}>
-            <AppText variant="labelSm" color="primary">
-              QuickPharma
-            </AppText>
-            <AppText variant="headlineSm">{title}</AppText>
-          </View>
-        </View>
+        <PageHeader
+          title={title}
+          onBack={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/home')))}
+        />
       }
     >
       {children}
@@ -263,6 +271,11 @@ export function ReferenceSelect({
   params?: Row;
   enabled?: boolean;
 }) {
+  const { tDynamic } = useTranslation();
+  const referenceName = (row: Row) =>
+    path.includes('status') || path === '/types/payments'
+      ? translatedReference(row, tDynamic)
+      : itemName(row);
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState(''),
     [page, setPage] = useState(1),
@@ -286,7 +299,9 @@ export function ReferenceSelect({
     <>
       <AppText variant="labelLg">{label}</AppText>
       <Button
-        label={row ? itemName(row) : value ? 'Valeur actuelle sélectionnée' : `Choisir : ${label}`}
+        label={
+          row ? referenceName(row) : value ? 'Valeur actuelle sélectionnée' : `Choisir : ${label}`
+        }
         variant="tonal"
         trailingIcon="expand-more"
         disabled={!enabled}
@@ -309,12 +324,12 @@ export function ReferenceSelect({
         ) : (
           <>
             {rows
-              .filter((r) => !term || itemName(r).toLowerCase().includes(term.toLowerCase()))
+              .filter((r) => !term || referenceName(r).toLowerCase().includes(term.toLowerCase()))
               .slice(0, limit)
               .map((r) => (
                 <Button
                   key={itemId(r)}
-                  label={itemName(r)}
+                  label={referenceName(r)}
                   variant="ghost"
                   onPress={() => {
                     setSelected(r);

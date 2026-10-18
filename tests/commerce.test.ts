@@ -10,6 +10,11 @@ import { pageFrom, payload } from '@/features/commerce/api';
 import { entryDocumentHtml } from '@/features/commerce/entryDocuments';
 import { backendMenuGroups } from '@/features/navigation/backendMenu';
 import { makeAccess } from './fixtures/access';
+import {
+  defaultEntryProvider,
+  defaultEntryStatus,
+  translatedReference,
+} from '@/features/commerce/entryDefaults';
 jest.mock('@/services/api/client', () => ({
   apiGet: jest.fn(),
   httpClient: { request: jest.fn() },
@@ -50,6 +55,37 @@ const form: EntryFormData = {
   note: '',
 };
 describe('commercial API contracts', () => {
+  it('selects the web defaults by their business keys, without assuming fixed ids', () => {
+    expect(
+      defaultEntryProvider([
+        { id: 8, name: 'Autre' },
+        { id: 43, name: 'Default Provider' },
+      ]),
+    ).toBe('43');
+    expect(defaultEntryProvider([{ id: 72, code: 'Default Provider', name: 'Fournisseur' }])).toBe(
+      '72',
+    );
+    expect(
+      defaultEntryStatus([
+        { id: 8, code: 'pending' },
+        { id: 91, code: 'complete', label: 'Terminée' },
+      ]),
+    ).toBe('91');
+    expect(defaultEntryStatus([{ value: 92, title: 'Complete' }])).toBe('92');
+    expect(defaultEntryProvider([{ id: 8, name: 'Autre' }])).toBe('');
+    expect(defaultEntryStatus([{ id: 8, code: 'pending' }])).toBe('');
+  });
+  it('uses the web translations for statuses and keeps a French offline fallback', () => {
+    expect(
+      translatedReference({ code: 'complete', label: 'Complete' }, (key, fallback) =>
+        key === 'complete' ? 'Terminée web' : fallback,
+      ),
+    ).toBe('Terminée web');
+    expect(translatedReference({ label: 'UnPaid' }, (_key, fallback) => fallback)).toBe('Impayée');
+    expect(translatedReference({ label: 'Réceptionnée' }, (_key, fallback) => fallback)).toBe(
+      'Réceptionnée',
+    );
+  });
   it('reads store envelopes and Laravel resource pagination without losing totals', () => {
     expect(
       pageFrom({ status: true, data: { data: [{ id: 1 }], last_page: 3, total: 45 } }),
@@ -135,7 +171,42 @@ describe('commercial API contracts', () => {
     expect(html).toContain('&lt;script&gt;');
     expect(html).not.toContain('<script>');
     expect(html).toContain('001');
-    expect(html).toContain('BON D’ENTRÉE DE STOCK');
+    expect(html).toContain('ENTRÉE DE STOCK #');
+  });
+  it('matches the web receipt sections, SKU column, totals and company footer', () => {
+    const html = entryDocumentHtml(
+      {
+        ref: 'ENT-42',
+        date: '2026-10-18',
+        providersName: 'Fournisseur',
+        providersEmail: 'provider@example.org',
+        providersTell: '0600000000',
+        subTotal: 100,
+        tax: 20,
+        discount: 5,
+        totalWithTax: 114,
+        paid: 114,
+        due: 0,
+      },
+      [{ title: 'Produit', ref: '001234', qte: 2, price: 50, total: 100 }],
+      {
+        companyName: 'Magasin',
+        companyAddress: 'Adresse',
+        companyEmail: 'store@example.org',
+        companyTell: '0612345678',
+      },
+      'data:image/png;base64,AAAA',
+    );
+    expect(html).toContain(
+      '<th>Produit</th><th>SKU</th><th>Quantité</th><th>Prix</th><th>Total</th>',
+    );
+    expect(html).not.toContain('<th>Expiration</th>');
+    expect(html).toContain('provider@example.org');
+    expect(html).toContain('data:image/png;base64,AAAA');
+    expect(html).toContain('<footer>');
+    expect(html).toContain('store@example.org');
+    expect(html).toContain('October 18, 2026');
+    expect(html).toContain('-5 DH');
   });
   it('connects only the three backend menu entries and keeps their real permission checks', () => {
     const menus = [

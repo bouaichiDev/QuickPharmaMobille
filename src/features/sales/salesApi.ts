@@ -4,10 +4,17 @@ import { itemId, listPayload, record, type CrmRecord } from '@/features/crm/crmA
 export interface CartLine {
   product: Product;
   quantity: number;
+  discount?: number;
 }
 const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+export function saleLineTotal(line: CartLine) {
+  const discount = Number.isFinite(line.discount ?? 0)
+    ? Math.max(0, Math.min(100, line.discount ?? 0))
+    : 0;
+  return round(line.quantity * line.product.sellingPrice * (1 - discount / 100));
+}
 export function saleTotals(lines: CartLine[], discount: number, tax: number, received: number) {
-  const subtotal = round(lines.reduce((sum, l) => sum + l.quantity * l.product.sellingPrice, 0));
+  const subtotal = round(lines.reduce((sum, l) => sum + saleLineTotal(l), 0));
   const discountAmount = round((subtotal * discount) / 100);
   const taxAmount = round(((subtotal - discountAmount) * tax) / 100);
   const total = round(subtotal - discountAmount + taxAmount);
@@ -48,6 +55,12 @@ export function salePayload(input: {
     throw new Error('Les montants saisis sont invalides.');
   for (const line of input.lines) {
     if (
+      !Number.isFinite(line.discount ?? 0) ||
+      (line.discount ?? 0) < 0 ||
+      (line.discount ?? 0) > 100
+    )
+      throw new Error('La remise produit doit être comprise entre 0 et 100 %.');
+    if (
       !Number.isInteger(line.quantity) ||
       line.quantity < 1 ||
       line.product.quantity === null ||
@@ -79,17 +92,19 @@ export function salePayload(input: {
     paymentNote: '.',
     active: 1,
     dataItems: JSON.stringify(
-      input.lines.map(({ product: p, quantity: q }) => ({
+      input.lines.map(({ product: p, quantity: q, discount = 0 }) => ({
         product_id: p.id,
         title: p.productName,
         ref: p.sku,
         price: p.sellingPrice,
         qte: q,
-        Total: (p.sellingPrice * q).toFixed(2),
+        Total: saleLineTotal({ product: p, quantity: q, discount }).toFixed(2),
+        // Null delegates allocation across all expiry batches to the same FIFO
+        // service as the web; pinning the first date would cap stock to one batch.
         dateExperation: null,
         QteAvailable: p.quantity,
-        discount: 0,
-        callDiscount: 0,
+        discount,
+        callDiscount: round((p.sellingPrice * q * discount) / 100),
       })),
     ),
   };

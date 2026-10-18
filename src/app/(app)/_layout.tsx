@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { PageLayersProvider } from '@/features/navigation/PageLayers';
 import { AppBottomNavigation } from '@/features/navigation/AppBottomNavigation';
 import { ServicesMenuSheet } from '@/features/navigation/ServicesMenuSheet';
@@ -29,6 +31,14 @@ export default function AppLayout() {
         <PageLayersProvider footer={<AppBottomNavigation onMore={() => setMenuVisible(true)} />}>
           <Stack
             screenOptions={{
+              header: ({ options, navigation, back }) => (
+                <SafeAreaView edges={['top']} style={{ backgroundColor: colors.surface }}>
+                  <PageHeader
+                    title={String(options.title ?? '')}
+                    onBack={back ? () => navigation.goBack() : undefined}
+                  />
+                </SafeAreaView>
+              ),
               headerShadowVisible: false,
               headerStyle: { backgroundColor: colors.surface },
               headerTintColor: colors.primary,

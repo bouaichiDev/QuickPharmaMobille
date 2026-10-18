@@ -18,6 +18,8 @@ export interface Product {
   sellingPrice: number;
   active: number;
   hasExpiration: number;
+  discount?: number;
+  expiry?: string | null;
 }
 
 export interface ProductPage {
@@ -141,6 +143,8 @@ function productFrom(value: unknown): Product | null {
     sellingPrice,
     active,
     hasExpiration,
+    discount: toNumber(raw.discount) ?? 0,
+    expiry: typeof raw.expiredDate === 'string' ? raw.expiredDate.slice(0, 10) : null,
   };
 }
 

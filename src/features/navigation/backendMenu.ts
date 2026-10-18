@@ -77,6 +77,10 @@ export function backendMenuGroups(
         denied: !can(access, 'platform.metrics.view'),
       };
     const pharmacy: Record<string, [string, IconName, string]> = {
+      '/suppliers': ['/suppliers', 'local-shipping', 'suppliers.view'],
+      '/providers': ['/suppliers', 'local-shipping', 'suppliers.view'],
+      '/orders': ['/orders', 'shopping-cart', 'orders.view'],
+      '/reports': ['/reports', 'bar-chart', 'reports.view'],
       '/sales': ['/sales', 'point-of-sale', 'sales.view'],
       '/stores': ['/stores', 'storefront', 'stores.view'],
       '/customers': ['/customers', 'group', 'customers.view'],
@@ -99,17 +103,24 @@ export function backendMenuGroups(
       ? {
           href: target[0],
           icon: target[1],
-          fallback: target[0].startsWith('/sales')
-            ? 'Ventes'
-            : target[0] === '/stock'
-              ? 'Stock'
-              : target[0] === '/stock?panel=inventory'
-                ? 'Inventaire'
-                : target[0] === '/stock?panel=locations'
-                  ? 'Emplacements'
-                  : target[0] === '/plans'
-                    ? 'Abonnements'
-                    : 'Catégories',
+          fallback:
+            target[0] === '/suppliers'
+              ? 'Fournisseurs'
+              : target[0] === '/orders'
+                ? 'Commandes'
+                : target[0] === '/reports'
+                  ? 'Rapports'
+                  : target[0].startsWith('/sales')
+                    ? 'Ventes'
+                    : target[0] === '/stock'
+                      ? 'Stock'
+                      : target[0] === '/stock?panel=inventory'
+                        ? 'Inventaire'
+                        : target[0] === '/stock?panel=locations'
+                          ? 'Emplacements'
+                          : target[0] === '/plans'
+                            ? 'Abonnements'
+                            : 'Catégories',
           denied:
             path === '/locations'
               ? !['products.view', 'stock.view', 'stock.locations.manage'].some((permission) =>

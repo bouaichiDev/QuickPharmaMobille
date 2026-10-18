@@ -104,7 +104,7 @@ it('uses the retained login tree rather than the separately fetched menu tree', 
   expect(backendMenuGroups(access, [])).toEqual([]);
 });
 
-it('retains unsupported role menus as disabled entries in backend order', () => {
+it('retains unauthorized role menus as disabled entries in backend order', () => {
   const groups = backendMenuGroups(
     makeAccess({
       menus: [
@@ -115,7 +115,7 @@ it('retains unsupported role menus as disabled entries in backend order', () => 
   );
   expect(groups[0]?.items.map((item) => [item.label, item.disabled, item.reason])).toEqual([
     ['Ventes', true, 'Accès non autorisé'],
-    ['Fournisseurs', true, 'À développer sur mobile'],
+    ['Fournisseurs', true, 'Accès non autorisé'],
   ]);
 });
 

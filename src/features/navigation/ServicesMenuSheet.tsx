@@ -1,5 +1,5 @@
 import { backendMenuGroups, type MobileMenuGroup } from './backendMenu';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -20,10 +20,20 @@ export function ServicesMenuSheet({ visible, onClose }: { visible: boolean; onCl
   const session = useSessionStore((state) => state.session);
   const { t, tDynamic } = useTranslation();
   const [search, setSearch] = useState('');
+  const destination = useRef<string | null>(null);
+  useEffect(() => {
+    if (visible || !destination.current) return;
+    const href = destination.current;
+    destination.current = null;
+    // Wait for the native menu overlay to unmount before changing screens.
+    const frame = requestAnimationFrame(() => router.push(href as Href));
+    return () => cancelAnimationFrame(frame);
+  }, [visible]);
   function open(href: string) {
+    if (!visible || destination.current) return;
+    destination.current = href;
     onClose();
     setSearch('');
-    router.push(href as Href);
   }
   const support = !!session?.supportAccess;
   const menuAccess =

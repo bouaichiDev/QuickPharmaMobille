@@ -114,6 +114,7 @@ export function linesFrom(rows: Row[]): EntryLine[] {
     qte: number(r.qte),
     price: number(r.price),
     dateExperation: r.dateExperation ? String(r.dateExperation).slice(0, 10) : null,
+    hasExpiration: r.hasExpiration == null ? undefined : Number(r.hasExpiration) === 1,
   }));
 }
 export interface FastLine {

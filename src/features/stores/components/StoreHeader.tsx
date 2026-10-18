@@ -8,8 +8,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCurrentStore } from '../useCurrentStore';
 import { StoreSwitcherSheet } from './StoreSwitcherSheet';
+import { PharmacyLogo } from './PharmacyLogo';
 
-export function StoreHeader() {
+export function StoreHeader({ title, onBack }: { title?: string; onBack?: () => void } = {}) {
   const { t } = useTranslation();
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -20,6 +21,9 @@ export function StoreHeader() {
   return (
     <>
       <AppHeader
+        logo={<PharmacyLogo />}
+        title={title}
+        onBack={onBack}
         storeLabel={t('mobile.profile.activeStore')}
         storeName={store?.name ?? null}
         canSwitchStore={canSwitch}

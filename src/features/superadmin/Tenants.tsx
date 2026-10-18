@@ -1,4 +1,5 @@
 import { memo, useContext, useState } from 'react';
+import { SearchFilterRow } from '@/components/ui/SearchFilterRow';
 import { PlatformContext } from './PlatformContext';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import { router, type Href } from 'expo-router';
@@ -17,7 +18,6 @@ import {
   QueryState,
   Pager,
   AppText,
-  TextField,
   Button,
   currency,
   date,
@@ -158,27 +158,17 @@ export function Tenants({ onSelect }: { onSelect?: (id: number) => void } = {}) 
                 <AppText variant="bodySm">
                   {query.data?.total ?? '—'} magasins correspondant aux filtres
                 </AppText>
-                <View style={[sa.row, { alignItems: 'flex-end' }]}>
-                  <View style={sa.grow}>
-                    <TextField
-                      label="Rechercher un établissement"
-                      placeholder="Nom, e-mail ou propriétaire"
-                      value={search}
-                      onChangeText={(v) => {
-                        setSearch(v);
-                        setPage(1);
-                      }}
-                    />
-                  </View>
-                  <Button
-                    label={filters ? 'Masquer les filtres' : 'Filtres'}
-                    variant="tonal"
-                    icon="tune"
-                    fullWidth={false}
-                    compact
-                    onPress={() => setFilters(!filters)}
-                  />
-                </View>
+                <SearchFilterRow
+                  label="Rechercher un établissement"
+                  placeholder="Nom, e-mail ou propriétaire"
+                  value={search}
+                  onChangeText={(v) => {
+                    setSearch(v);
+                    setPage(1);
+                  }}
+                  filterLabel={filters ? 'Masquer les filtres' : 'Filtres'}
+                  onFilterPress={() => setFilters(!filters)}
+                />
                 {filters ? (
                   <Panel>
                     <Choice

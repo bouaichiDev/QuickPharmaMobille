@@ -134,6 +134,8 @@ describe('products API', () => {
           active: 1,
           hasExpiration: 1,
           requires_prescription: 0,
+          discount: '5',
+          expiredDate: '2027-01-02',
         },
       ],
       meta: { current_page: 1, last_page: 1, per_page: 15, total: 1 },
@@ -162,6 +164,8 @@ describe('products API', () => {
           sellingPrice: 15,
           active: 1,
           hasExpiration: 1,
+          discount: 5,
+          expiry: '2027-01-02',
         },
       ],
     });
@@ -186,8 +190,13 @@ describe('products API', () => {
 
   it('uses live available stock including zero instead of a legacy receipt quantity', async () => {
     const product = {
-      id: 5, productName: 'Produit test', sku: 'SKU-05', categoryId: 2,
-      active: 1, hasExpiration: 0, sellingPrice: 15,
+      id: 5,
+      productName: 'Produit test',
+      sku: 'SKU-05',
+      categoryId: 2,
+      active: 1,
+      hasExpiration: 0,
+      sellingPrice: 15,
     };
     get.mockResolvedValue({
       data: [

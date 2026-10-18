@@ -55,6 +55,31 @@ describe('mobile checkout', () => {
     });
     expect(p).toMatchObject({ paid: 100, due: 116, total: 216, customer_id: 1 });
   });
+  it('applies line discounts before the global discount and tax, and serializes the web fields', () => {
+    const discounted = [{ ...lines[0]!, discount: 5 }];
+    const result = salePayload({ ...base, lines: discounted });
+    expect(result).toMatchObject({ subTotal: 190, calDiscount: 19, total: 205.2, due: 105.2 });
+    expect(JSON.parse(result.dataItems)[0]).toMatchObject({
+      price: 100,
+      discount: 5,
+      callDiscount: 10,
+      Total: '190.00',
+    });
+  });
+  it.each([NaN, -1, 101])('refuses invalid line discount %s', (discount) => {
+    expect(() => salePayload({ ...base, lines: [{ ...lines[0]!, discount }] })).toThrow(
+      'remise produit',
+    );
+  });
+  it('delegates expiring stock to server FIFO across batches instead of pinning the earliest date', () => {
+    const expiring = {
+      ...lines[0]!,
+      product: { ...lines[0]!.product, hasExpiration: 1, expiry: '2026-11-01' },
+      quantity: 4,
+    };
+    const result = salePayload({ ...base, lines: [expiring] });
+    expect(JSON.parse(result.dataItems)[0]).toMatchObject({ qte: 4, dateExperation: null });
+  });
   it.each([NaN, -1, 101])('rejects invalid discounts %s', (discount) => {
     expect(() => salePayload({ ...base, discount })).toThrow();
   });

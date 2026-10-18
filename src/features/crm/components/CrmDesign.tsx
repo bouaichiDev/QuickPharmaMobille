@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useContext, useEffect, useId, useMemo, type ReactNode } from 'react';
 import { NavigationContext, NavigationRouteContext } from 'expo-router/react-navigation';
 import { useIsFocused } from 'expo-router';
@@ -5,7 +6,6 @@ import { usePageLayers } from '@/features/navigation/PageLayers';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -106,21 +106,7 @@ export function CrmPage({
       <NavigationContext.Provider value={navigation}>
         <NavigationRouteContext.Provider value={route}>
           <SafeAreaView edges={landscape ? ['top', 'left', 'right'] : ['top']} style={styles.root}>
-            {header ?? (
-              <View style={styles.header}>
-                <Pressable
-                  onPress={onClose}
-                  accessibilityRole="button"
-                  accessibilityLabel="Retour"
-                  style={styles.back}
-                >
-                  <Icon name="arrow-back" color="primary" />
-                </Pressable>
-                <AppText variant="headlineSm" numberOfLines={1} style={crmStyles.grow}>
-                  {title}
-                </AppText>
-              </View>
-            )}
+            {header ?? <PageHeader title={title} onBack={onClose} />}
             <KeyboardAvoidingView
               style={styles.root}
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}

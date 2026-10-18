@@ -1,4 +1,6 @@
 import { ResponsiveList } from '@/components/ui/ResponsiveGrid';
+import { ProductPrice } from '@/features/catalogue/ProductPrice';
+import { productDiscount } from '@/features/catalogue/productPricing';
 import { useResponsiveLayout } from '@/components/ui/useResponsiveLayout';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -16,7 +18,7 @@ import { can, canCreate } from '@/features/crm/modules';
 import { itemId, listPayload, type CrmRecord } from '@/features/crm/crmApi';
 import { useProducts } from '@/features/stores/useProducts';
 import type { Product } from '@/features/stores/productsApi';
-import { salePayload, saleTotals, salesApi, type CartLine } from './salesApi';
+import { saleLineTotal, salePayload, saleTotals, salesApi, type CartLine } from './salesApi';
 import {
   CustomerSummary,
   SalesCustomerPicker,
@@ -60,12 +62,13 @@ export function SaleCheckout({
   const { needsReflow } = useResponsiveLayout();
   const [step, setStep] = useState(0);
   const [lines, setLines] = useState<CartLine[]>([]);
+  const [lineDiscounts, setLineDiscounts] = useState<Record<number, string>>({});
   const [selectedCustomer, setCustomer] = useState<CrmRecord | undefined>(initialCustomer);
   const [picking, setPicking] = useState(false);
   const customers = useSalesCustomers();
   const customer = selectedCustomer ?? customers.data?.find(isCounter);
   const [status, setStatus] = useState('');
-  const [paymentType, setPaymentType] = useState('');
+  const [selectedPaymentType, setPaymentType] = useState('');
   const [search, setSearch] = useState('');
   const [settled, setSettled] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
@@ -113,10 +116,20 @@ export function SaleCheckout({
   );
   const statusId = status || (defaultStatus ? itemId(defaultStatus) : '');
   const statusRow = statuses.data?.find((row) => itemId(row) === statusId);
+  const cashMethod = methods.data?.find((row) =>
+    ['espèces', 'especes', 'cash'].includes(referenceText(row).trim().toLowerCase()),
+  );
+  const paymentType = selectedPaymentType || (cashMethod ? itemId(cashMethod) : '');
   const method = methods.data?.find((row) => itemId(row) === paymentType);
   const num = (value: string) => Number(value.replace(',', '.'));
   const actualDiscount = can(access, 'sales.apply_discount') ? num(discount) : 0;
   const validNumbers =
+    lines.every(
+      (line) =>
+        Number.isFinite(line.discount ?? 0) &&
+        (line.discount ?? 0) >= 0 &&
+        (line.discount ?? 0) <= 100,
+    ) &&
     [actualDiscount, num(tax), num(received)].every(Number.isFinite) &&
     actualDiscount >= 0 &&
     actualDiscount <= 100 &&
@@ -174,7 +187,14 @@ export function SaleCheckout({
         ? old.map((line) =>
             line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line,
           )
-        : [...old, { product, quantity: 1 }];
+        : [
+            ...old,
+            {
+              product,
+              quantity: 1,
+              discount: can(access, 'sales.apply_discount') ? productDiscount(product) : 0,
+            },
+          ];
     });
   }
   const close = () => {
@@ -372,10 +392,14 @@ export function SaleCheckout({
                         }
                         tone={(product.quantity ?? 0) > 0 ? 'teal' : 'red'}
                       />
-                      <AppText variant="labelLg" style={{ color: pos.blue }}>
-                        {money(product.sellingPrice)} DH
-                      </AppText>
+                      <ProductPrice product={product} />
                     </View>
+                    {product.hasExpiration === 1 ? (
+                      <AppText variant="bodySm" color="outline">
+                        FIFO automatique
+                        {product.expiry ? ` · Expiration prioritaire : ${product.expiry}` : ''}
+                      </AppText>
+                    ) : null}
                   </View>
                   <Pressable
                     accessibilityRole="button"
@@ -436,18 +460,45 @@ export function SaleCheckout({
                     <AppText variant="bodySm" color="outline">
                       P.U. {money(line.product.sellingPrice)} DH • Dispo. {line.product.quantity}
                     </AppText>
+                    {line.product.hasExpiration === 1 ? (
+                      <AppText variant="bodySm" color="outline">
+                        Lots FIFO automatiques
+                        {line.product.expiry ? ` · Dès le ${line.product.expiry}` : ''}
+                      </AppText>
+                    ) : null}
                   </View>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Retirer ${line.product.productName}`}
-                    onPress={() =>
-                      setLines((old) => old.filter((x) => x.product.id !== line.product.id))
-                    }
+                    onPress={() => {
+                      setLines((old) => old.filter((x) => x.product.id !== line.product.id));
+                      setLineDiscounts((old) => {
+                        const next = { ...old };
+                        delete next[line.product.id];
+                        return next;
+                      });
+                    }}
                     style={s.iconButton}
                   >
                     <Icon name="delete-outline" color="outline" size={22} />
                   </Pressable>
                 </View>
+                <TextField
+                  label={`Remise produit (%) · ${line.product.productName}`}
+                  keyboardType="decimal-pad"
+                  value={lineDiscounts[line.product.id] ?? String(line.discount ?? 0)}
+                  editable={can(access, 'sales.apply_discount') && !mutation.isPending}
+                  onChangeText={(value) => {
+                    setLineDiscounts((old) => ({ ...old, [line.product.id]: value }));
+                    setLines((old) =>
+                      old.map((x) =>
+                        x.product.id === line.product.id
+                          ? { ...x, discount: Number(value.replace(',', '.')) }
+                          : x,
+                      ),
+                    );
+                  }}
+                />
                 <View style={[s.row, { justifyContent: 'space-between' }]}>
                   <View style={[s.row, s.inset, { padding: 4 }]}>
                     <Pressable
@@ -490,7 +541,7 @@ export function SaleCheckout({
                       Sous-total
                     </AppText>
                     <AppText variant="headlineMd" style={{ color: pos.blue }}>
-                      {money(line.quantity * line.product.sellingPrice)} DH
+                      {money(saleLineTotal(line))} DH
                     </AppText>
                   </View>
                 </View>
@@ -527,7 +578,11 @@ export function SaleCheckout({
                     disabled: mutation.isPending,
                   }}
                   disabled={mutation.isPending}
-                  onPress={() => setPaymentType(itemId(row))}
+                  onPress={() => {
+                    setPaymentType(itemId(row));
+                    if (itemId(row) !== (cashMethod ? itemId(cashMethod) : ''))
+                      setReceived(String(totals.total));
+                  }}
                   style={[
                     s.card,
                     {

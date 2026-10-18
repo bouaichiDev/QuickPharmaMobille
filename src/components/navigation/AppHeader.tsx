@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { ReactNode } from 'react';
 
 import { AppText } from '@/components/ui/AppText';
 import { Avatar } from '@/components/ui/Avatar';
@@ -13,6 +14,9 @@ interface AppHeaderProps {
   userName: string | null;
   onAvatarPress?: () => void;
   storeLabel: string;
+  logo?: ReactNode;
+  title?: string;
+  onBack?: () => void;
 }
 
 /** Top bar shared by the signed-in screens (Stitch header). */
@@ -23,10 +27,23 @@ export function AppHeader({
   userName,
   onAvatarPress,
   storeLabel,
+  logo,
+  title,
+  onBack,
 }: AppHeaderProps) {
   return (
     <View style={styles.bar}>
-      <LogoMark size={40} />
+      {onBack ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+          onPress={onBack}
+          style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Icon name="arrow-back" color="primary" />
+        </Pressable>
+      ) : null}
+      {logo ?? <LogoMark size={40} />}
       <Pressable
         accessibilityRole={canSwitchStore ? 'button' : 'text'}
         accessibilityLabel={`${storeLabel}: ${storeName ?? ''}`}
@@ -35,9 +52,21 @@ export function AppHeader({
         style={styles.storePill}
       >
         <View style={styles.dot} />
-        <AppText variant="labelLg" color="onPrimaryFixed" numberOfLines={1} style={styles.storeName}>
-          {storeName ?? '—'}
-        </AppText>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText
+            variant="labelLg"
+            color="onPrimaryFixed"
+            numberOfLines={1}
+            style={styles.storeName}
+          >
+            {storeName ?? '—'}
+          </AppText>
+          {title ? (
+            <AppText variant="labelSm" color="outline" numberOfLines={1}>
+              {title}
+            </AppText>
+          ) : null}
+        </View>
         {canSwitchStore ? <Icon name="arrow-drop-down" size="md" color="onPrimaryFixed" /> : null}
       </Pressable>
       <Pressable accessibilityRole="button" onPress={onAvatarPress} hitSlop={6}>

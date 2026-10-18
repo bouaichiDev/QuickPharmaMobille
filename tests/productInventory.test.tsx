@@ -6,6 +6,7 @@ import { StockContext } from '@/features/catalogue/StockContext';
 import { stockApi, type StockProduct } from '@/features/catalogue/stockApi';
 import { stockActionLabels, type StockUnit } from '@/features/catalogue/productInventoryApi';
 import { makeAccess } from './fixtures/access';
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/features/access/useAccess', () => ({ useAccess: () => ({ data: undefined }) }));
 jest.mock('@/features/auth/sessionStore', () => ({
   useSessionStore: (f: (s: unknown) => unknown) => f({ session: null }),
@@ -74,37 +75,33 @@ function setup(permissions = ['stock.view', 'stock.adjust', 'stock.transfer']) {
       last_page: 2,
       per_page: 25,
     }));
-  const options = jest
-    .fn()
-    .mockResolvedValue({
-      providers: [{ id: 2, name: 'Fournisseur Démo' }],
-      locations: [{ id: 5, name: 'Rayon B' }],
-      stores: [{ id: 8, name: 'Autre officine' }],
-      destination_products: [
-        { id: 201, productName: 'Produit Destination', sku: 'DST-1', hasExpiration: 0 },
-      ],
-    });
-  const movements = jest
-    .fn()
-    .mockResolvedValue({
-      data: [
-        {
-          id: 3,
-          type: 'in',
-          source: 'manual',
-          quantity: 2,
-          created_at: '2025-01-01',
-          notes: 'Réception initiale',
-          creator: 'Badr',
-          from_location: null,
-          to_location: 'Rayon B',
-        },
-      ],
-      total: 1,
-      current_page: 1,
-      last_page: 1,
-      per_page: 25,
-    });
+  const options = jest.fn().mockResolvedValue({
+    providers: [{ id: 2, name: 'Fournisseur Démo' }],
+    locations: [{ id: 5, name: 'Rayon B' }],
+    stores: [{ id: 8, name: 'Autre officine' }],
+    destination_products: [
+      { id: 201, productName: 'Produit Destination', sku: 'DST-1', hasExpiration: 0 },
+    ],
+  });
+  const movements = jest.fn().mockResolvedValue({
+    data: [
+      {
+        id: 3,
+        type: 'in',
+        source: 'manual',
+        quantity: 2,
+        created_at: '2025-01-01',
+        notes: 'Réception initiale',
+        creator: 'Badr',
+        from_location: null,
+        to_location: 'Rayon B',
+      },
+    ],
+    total: 1,
+    current_page: 1,
+    last_page: 1,
+    per_page: 25,
+  });
   const change = jest.fn().mockResolvedValue({ action: 'edit', changed: 1 });
   const client = new QueryClient({
     defaultOptions: {

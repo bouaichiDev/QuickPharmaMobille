@@ -1,6 +1,7 @@
+import { PageHeader } from '@/components/navigation/PageHeader';
 import { useContext, useState, type ReactNode } from 'react';
 import { AccessWorkspaceContext } from './AccessWorkspaceContext';
-import { Pressable, StyleSheet, View, type ListRenderItem } from 'react-native';
+import { StyleSheet, View, type ListRenderItem } from 'react-native';
 import { router } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +13,6 @@ import { SkeletonCards } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { normalizeApiError } from '@/services/api/apiError';
-import { colors } from '@/theme';
 import { ExpirationDateField } from '@/features/stores/components/ExpirationDateField';
 import type { Page } from './api';
 import { ResponsiveList } from '@/components/ui/ResponsiveGrid';
@@ -43,49 +43,12 @@ export const sa = StyleSheet.create({
 });
 export function AdminHeader({ title, back = true }: { title: string; back?: boolean }) {
   return (
-    <View style={sa.heading}>
-      {back ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Retour"
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))}
-          style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-        >
-          <Icon name="arrow-back" color="primary" />
-        </Pressable>
-      ) : null}
-      <View style={sa.grow}>
-        {back ? <Tag label="SUPER ADMIN" /> : null}
-        <AppText variant="headlineSm" numberOfLines={2}>
-          {title}
-        </AppText>
-      </View>
-      {!back ? <Tag label="SUPER ADMIN" /> : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Profil"
-        onPress={() => router.push('/profile')}
-        style={{
-          minWidth: 44,
-          minHeight: 44,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 20,
-            backgroundColor: colors.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon name="person-outline" color="onPrimary" size={20} />
-        </View>
-      </Pressable>
-    </View>
+    <PageHeader
+      title={title}
+      onBack={
+        back ? () => (router.canGoBack() ? router.back() : router.replace('/home')) : undefined
+      }
+    />
   );
 }
 export function AdminScreen({

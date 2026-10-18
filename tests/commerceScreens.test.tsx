@@ -1,12 +1,61 @@
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StoresScreen from '@/features/commerce/StoresScreen';
 import CustomersScreen from '@/features/commerce/CustomersScreen';
 import EntriesScreen from '@/features/commerce/EntriesScreen';
-import EntryForm from '@/features/commerce/EntryForm';
+import EntryForm, { LineEditor, ProductPicker } from '@/features/commerce/EntryForm';
+import { stockApi } from '@/features/catalogue/stockApi';
 import { commerceApi } from '@/features/commerce/api';
 import { makeAccess } from './fixtures/access';
 let mockSupport = false;
+it.each([false, true])(
+  'requires an expiration date only for expiring products: %s',
+  (hasExpiration) => {
+    const saved = jest.fn();
+    setup(() => (
+      <LineEditor
+        line={{
+          key: 'new-1',
+          product_id: 42,
+          title: 'Produit',
+          ref: '42',
+          qte: 1,
+          price: 3,
+          dateExperation: null,
+          hasExpiration,
+        }}
+        onClose={jest.fn()}
+        onSave={saved}
+      />
+    ));
+    expect(!!screen.queryByLabelText('Expiration *')).toBe(hasExpiration);
+    fireEvent.press(screen.getByText('Ajouter au bon'));
+    if (hasExpiration) {
+      expect(saved).not.toHaveBeenCalled();
+      expect(screen.getByText('L’expiration est obligatoire pour ce produit.')).toBeTruthy();
+      fireEvent.changeText(screen.getByLabelText('Expiration *'), '2027-10-18');
+      fireEvent.press(screen.getByText('Ajouter au bon'));
+    }
+    expect(saved).toHaveBeenCalledWith(
+      expect.objectContaining({ dateExperation: hasExpiration ? '2027-10-18' : null }),
+    );
+  },
+);
+// Jest's VM cannot import the native camera dynamically; keep its async lazy
+// boundary while substituting the camera component, as for other native APIs.
+jest.mock('react', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...React,
+    lazy: (load: () => Promise<unknown>) =>
+      React.lazy(() =>
+        String(load).includes('StockScannerCamera')
+          ? Promise.resolve(jest.requireMock('@/features/catalogue/StockScannerCamera'))
+          : load(),
+      ),
+  };
+});
 const mockAccess = makeAccess({
   permissions: [
     'stores.view',
@@ -45,9 +94,28 @@ jest.mock('@/features/crm/components/CareTags', () => ({ CareTags: () => null })
 jest.mock('@/features/superadmin/AdminUI', () => ({
   currency: (v: unknown) => `${v} DH`,
   date: (v: unknown) => String(v),
-  DateInput: () => null,
+  DateInput: ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+  }) => {
+    const { TextInput } = jest.requireActual('react-native');
+    return <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} />;
+  },
 }));
 jest.mock('@/components/ui/Icon', () => ({ Icon: () => null }));
+jest.mock('@/features/catalogue/StockScannerCamera', () => ({
+  __esModule: true,
+  default: () => {
+    const React = jest.requireActual('react');
+    const { Text } = jest.requireActual('react-native');
+    return React.createElement(Text, null, 'Caméra du scanner');
+  },
+}));
 jest.mock('@/features/catalogue/stockApi', () => ({
   stockApi: {
     products: jest.fn(async () => ({
@@ -228,17 +296,16 @@ it('completes the three-step stock entry with product quantity and real payment 
   fireEvent.press(await screen.findByText('Fournisseur test'));
   fireEvent.press(screen.getByText('Choisir : Statut de l’entrée *'));
   fireEvent.press(await screen.findByText('Réceptionnée'));
-  fireEvent.press(screen.getByText('Continuer vers les produits'));
-  fireEvent.press(screen.getByText('Rechercher ou scanner un produit'));
+  fireEvent.press(screen.getByText('Suivant'));
+  fireEvent.press(screen.getByText('Rechercher un produit'));
   fireEvent.press(await screen.findByText('Produit test · 001234'));
   fireEvent.changeText(screen.getByLabelText('Quantité reçue *'), '2');
   fireEvent.press(screen.getByText('Ajouter au bon'));
-  fireEvent.press(screen.getByText('Passer au récapitulatif'));
-  fireEvent.press(screen.getByText('Choisir : Mode de paiement *'));
-  fireEvent.press(await screen.findByText('Espèces'));
+  fireEvent.press(screen.getByText('Suivant'));
+  expect(await screen.findByText('Espèces')).toBeTruthy();
   fireEvent.press(screen.getByText('Choisir : Statut du paiement *'));
   fireEvent.press(await screen.findByText('Impayée'));
-  fireEvent.press(screen.getByText('Valider et enregistrer l’entrée'));
+  fireEvent.press(screen.getByText('Enregistrer'));
   await waitFor(() =>
     expect(commerceApi.write).toHaveBeenCalledWith(
       'post',
@@ -261,4 +328,100 @@ it('completes the three-step stock entry with product quantity and real payment 
     price: 3,
   });
   await waitFor(() => expect(saved).toHaveBeenCalledWith('9'));
+});
+it('preselects Default Provider and complete, sharing picker cache, and keeps the note collapsed', async () => {
+  jest.mocked(commerceApi.list).mockImplementation(async (path) => ({
+    rows:
+      path === '/providerDropdown'
+        ? [{ id: 83, name: 'Default Provider' }]
+        : [{ id: 91, code: 'complete', label: 'Complete' }],
+    lastPage: 1,
+    total: 1,
+  }));
+  setup(() => <EntryForm data={null} onClose={jest.fn()} onSaved={jest.fn()} />);
+  await screen.findByText('Default Provider');
+  await screen.findByText('Terminée');
+  expect(screen.queryByLabelText('Votre note')).toBeNull();
+  fireEvent.press(screen.getByText('Note (facultatif)'));
+  fireEvent.changeText(screen.getByLabelText('Votre note'), 'Livraison du matin');
+  fireEvent.press(screen.getByText('Note (facultatif)'));
+  expect(screen.queryByLabelText('Votre note')).toBeNull();
+  fireEvent.press(screen.getByText('Note (facultatif)'));
+  expect(screen.getByLabelText('Votre note').props.value).toBe('Livraison du matin');
+  fireEvent.press(screen.getByText('Suivant'));
+  expect(screen.getByText('Rechercher un produit')).toBeTruthy();
+  expect(screen.getByText('Scanner un produit')).toBeTruthy();
+  fireEvent.press(screen.getByText('Scanner un produit'));
+  await screen.findByText('Caméra du scanner');
+  expect(screen.getByLabelText('Nom, CIP ou code-barres')).toBeTruthy();
+  expect(
+    jest.mocked(commerceApi.list).mock.calls.filter(([path]) => path === '/providerDropdown'),
+  ).toHaveLength(1);
+});
+it('defaults to cash and paid and recalculates the paid amount after discounts and tax', async () => {
+  jest.mocked(commerceApi.list).mockImplementation(async (path, params) => ({
+    rows:
+      path === '/providerDropdown'
+        ? [{ id: 8, name: 'Default Provider' }]
+        : path === '/types/payments'
+          ? [{ id: 4, code: 'cash', label: 'Cash' }]
+          : params.src === 'payments'
+            ? [{ id: 11, code: 'paid', label: 'Paid' }]
+            : [{ id: 9, code: 'complete', label: 'Complete' }],
+    lastPage: 1,
+    total: 1,
+  }));
+  setup(() => <EntryForm data={null} onClose={jest.fn()} onSaved={jest.fn()} />);
+  await screen.findByText('Default Provider');
+  fireEvent.press(screen.getByText('Suivant'));
+  fireEvent.press(screen.getByText('Rechercher un produit'));
+  fireEvent.press(await screen.findByText('Produit test · 001234'));
+  fireEvent.changeText(screen.getByLabelText('Quantité reçue *'), '2');
+  fireEvent.press(screen.getByText('Ajouter au bon'));
+  fireEvent.press(screen.getByText('Suivant'));
+  expect(await screen.findByText('Espèces')).toBeTruthy();
+  expect(await screen.findByText('Payée')).toBeTruthy();
+  expect(screen.getByLabelText('Montant payé (DH)').props.value).toBe('6');
+  fireEvent.changeText(screen.getByLabelText('Remise fournisseur (DH)'), '1');
+  expect(screen.getByLabelText('Montant payé (DH)').props.value).toBe('5');
+  fireEvent.changeText(screen.getByLabelText('Taxe (%)'), '20');
+  expect(screen.getByLabelText('Montant payé (DH)').props.value).toBe('6');
+  fireEvent.press(screen.getByText('Enregistrer'));
+  await waitFor(() =>
+    expect(commerceApi.write).toHaveBeenCalledWith(
+      'post',
+      '/entrees',
+      expect.objectContaining({ paymentType: 4, paymentStatus: 11, paid: 6, total: 6, due: 0 }),
+    ),
+  );
+});
+it('starts the camera directly and keeps manual product search available while scanning', async () => {
+  const selected = jest.fn();
+  setup(() => <ProductPicker initialScan onClose={jest.fn()} onSelect={selected} />);
+  await screen.findByText('Caméra du scanner');
+  expect(stockApi.products).not.toHaveBeenCalled();
+  fireEvent.changeText(screen.getByLabelText('Nom, CIP ou code-barres'), 'Produit');
+  await screen.findByText('Produit test · 001234');
+  expect(screen.getByText('Caméra du scanner')).toBeTruthy();
+  fireEvent.press(screen.getByText('Produit test · 001234'));
+  expect(selected).toHaveBeenCalledWith(expect.objectContaining({ id: 42 }));
+});
+it('keeps both step controls in one fixed footer outside the scrolling form', () => {
+  setup(() => <EntryForm data={null} onClose={jest.fn()} onSaved={jest.fn()} />);
+  const footer = screen.getByTestId('commerce-fixed-footer');
+  const actions = screen.getByTestId('entry-step-actions');
+  expect(StyleSheet.flatten(actions.props.style).flexDirection).toBe('row');
+  expect(within(actions).getByText('Précédent')).toBeTruthy();
+  expect(within(actions).getByText('Suivant')).toBeTruthy();
+  let parent = footer.parent;
+  while (parent) {
+    expect(parent.type).not.toBe(ScrollView);
+    expect(parent.type).not.toBe('RCTScrollView');
+    parent = parent.parent;
+  }
+  expect(screen.getByLabelText('Précédent').props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getByText('Suivant'));
+  expect(
+    within(footer).getByText('Renseignez la référence, la date, le fournisseur et le statut.'),
+  ).toBeTruthy();
 });

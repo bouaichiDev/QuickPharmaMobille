@@ -1,3 +1,4 @@
+import { SearchFilterRow } from '@/components/ui/SearchFilterRow';
 import { lazy, memo, Suspense, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -27,9 +28,10 @@ import {
   useCommerceList,
   useDebounce,
 } from './CommerceUI';
-import { entryDocumentHtml, exportEntryDocument } from './entryDocuments';
+import { openEntryPdf } from './entryPdf';
+import { useTranslation } from '@/i18n/useTranslation';
+import { translatedReference } from './entryDefaults';
 const EntryForm = lazy(() => import('./EntryForm'));
-const FastEntry = lazy(() => import('./FastEntry'));
 export interface EntryData {
   entry: Row;
   items: Row[];
@@ -53,14 +55,20 @@ const EntryCard = memo(function EntryCard({
   row: Row;
   onOpen: (id: string) => void;
 }) {
+  const { tDynamic } = useTranslation();
   return (
     <Pressable accessibilityRole="button" onPress={() => onOpen(itemId(row))}>
       <Card>
         <View style={ui.row}>
-          <AppText variant="headlineSm" color="primary" style={ui.grow}>
+          <AppText variant="labelLg" color="primary" style={ui.grow} numberOfLines={2}>
             #{String(row.ref ?? '')}
           </AppText>
-          <Badge>{String(row.entreeStatusLabel ?? 'Entrée')}</Badge>
+          <Badge>
+            {translatedReference(
+              { label: row.entreeStatusLabel ?? 'Entrée', code: row.entreeStatusCode },
+              tDynamic,
+            )}
+          </Badge>
         </View>
         <AppText variant="bodyMd">
           {String(row.provider ?? 'Fournisseur')} · {date(row.date)}
@@ -70,7 +78,12 @@ const EntryCard = memo(function EntryCard({
           <Pair label="Payé" value={currency(row.paid)} />
           <Pair label="Reste à payer" value={currency(row.due)} />
           {row.paymentStatusLabel ? (
-            <Badge danger={number(row.due) > 0}>{String(row.paymentStatusLabel)}</Badge>
+            <Badge danger={number(row.due) > 0}>
+              {translatedReference(
+                { label: row.paymentStatusLabel, code: row.paymentStatusCode },
+                tDynamic,
+              )}
+            </Badge>
           ) : null}
         </View>
       </Card>
@@ -91,24 +104,12 @@ export default function EntriesScreen() {
     [filterOpen, setFilterOpen] = useState(false),
     [filterError, setFilterError] = useState('');
   const [id, setId] = useState<string>(),
-    [form, setForm] = useState<EntryData | null>(),
-    [fast, setFast] = useState(false);
+    [form, setForm] = useState<EntryData | null>();
   const query = useCommerceList('/entrees', { ref: term, ...filters }, 'entries.view');
   const back = () => {
     setForm(undefined);
     void query.refetch();
   };
-  if (fast)
-    return (
-      <Suspense fallback={<SkeletonCards count={3} />}>
-        <FastEntry
-          onClose={() => {
-            setFast(false);
-            void query.refetch();
-          }}
-        />
-      </Suspense>
-    );
   if (form !== undefined)
     return (
       <Suspense fallback={<SkeletonCards count={3} />}>
@@ -135,51 +136,35 @@ export default function EntriesScreen() {
             header={
               <>
                 <View style={ui.row}>
-                  <AppText variant="headlineMd" style={ui.grow}>
-                    Entrées de stock
-                  </AppText>
-                  <Badge>{query.data?.pages[0]?.total ?? '—'} bons</Badge>
-                </View>
-                {can('entries.create') ? (
-                  <View style={ui.row}>
+                  <View style={ui.grow}>
+                    <AppText variant="headlineSm" style={{ fontSize: 18 }}>
+                      Entrées de stock
+                    </AppText>
+                    <AppText variant="bodySm" color="outline">
+                      {query.data?.pages[0]?.total ?? '—'} bons
+                    </AppText>
+                  </View>
+                  {can('entries.create') ? (
                     <Button
                       label="Nouvelle entrée"
                       icon="add-circle-outline"
+                      compact
                       fullWidth={false}
-                      style={ui.grow}
                       onPress={() => setForm(null)}
                     />
-                    <Button
-                      label="Saisie rapide"
-                      icon="bolt"
-                      variant="outline"
-                      fullWidth={false}
-                      style={ui.grow}
-                      onPress={() => setFast(true)}
-                    />
-                  </View>
-                ) : null}
-                <View style={ui.row}>
-                  <View style={ui.grow}>
-                    <TextField
-                      label="Rechercher par référence"
-                      placeholder="Référence du bon…"
-                      value={search}
-                      onChangeText={setSearch}
-                    />
-                  </View>
-                  <Button
-                    label={`Filtres${count ? ` (${count})` : ''}`}
-                    icon="tune"
-                    compact
-                    fullWidth={false}
-                    variant="tonal"
-                    onPress={() => {
-                      setDraft(filters);
-                      setFilterOpen(true);
-                    }}
-                  />
+                  ) : null}
                 </View>
+                <SearchFilterRow
+                  label="Rechercher par référence"
+                  placeholder="Référence du bon…"
+                  value={search}
+                  onChangeText={setSearch}
+                  filterLabel={`Filtres${count ? ` (${count})` : ''}`}
+                  onFilterPress={() => {
+                    setDraft(filters);
+                    setFilterOpen(true);
+                  }}
+                />
                 {count ? (
                   <Button
                     label="Réinitialiser les filtres"
@@ -247,20 +232,21 @@ export default function EntriesScreen() {
     </>
   );
 }
-function EntryDetail({
+export function EntryDetail({
   id,
   onBack,
   onEdit,
 }: {
   id: string;
   onBack: () => void;
-  onEdit: (data: EntryData) => void;
+  onEdit?: (data: EntryData) => void;
 }) {
   const { store, can } = useCommerceAccess(),
     qc = useQueryClient();
+  const { tDynamic } = useTranslation();
   const [limit, setLimit] = useState(20),
     [document, setDocument] = useState(false),
-    [docBusy, setDocBusy] = useState(false),
+    [docBusy, setDocBusy] = useState<'print' | 'mail' | null>(null),
     [docError, setDocError] = useState(''),
     [returnMode, setReturnMode] = useState<'return' | 'restore'>(),
     [editConfirm, setEditConfirm] = useState(false);
@@ -275,14 +261,21 @@ function EntryDetail({
     items = data?.items ?? [];
   async function exportDoc(print = false) {
     if (docBusy || !data) return;
-    setDocBusy(true);
+    setDocBusy(print ? 'print' : 'mail');
     setDocError('');
+    const watchdog = setTimeout(() => {
+      setDocBusy(null);
+      setDocError(
+        'Le document met trop de temps à s’ouvrir. Fermez la fenêtre d’impression ou d’e-mail, puis réessayez.',
+      );
+    }, 60000);
     try {
-      await exportEntryDocument(entryDocumentHtml(data.entry, data.items, data.company), print);
+      await openEntryPdf(id, data.entry, print);
     } catch (e) {
       setDocError(e instanceof Error ? e.message : 'Document indisponible.');
     } finally {
-      setDocBusy(false);
+      clearTimeout(watchdog);
+      setDocBusy(null);
     }
   }
   if (returnMode && data)
@@ -318,7 +311,12 @@ function EntryDetail({
               <AppText variant="headlineMd" color="primary" style={ui.grow}>
                 #{String(row.ref ?? '')}
               </AppText>
-              <Badge>{String(row.entreeStatusLabel ?? 'Entrée')}</Badge>
+              <Badge>
+                {translatedReference(
+                  { label: row.entreeStatusLabel ?? 'Entrée', code: row.entreeStatusCode },
+                  tDynamic,
+                )}
+              </Badge>
             </View>
             {document ? (
               <Card title={String(data.company.companyName ?? 'QuickPharma')}>
@@ -345,7 +343,10 @@ function EntryDetail({
                 <Pair label="Montant payé" value={currency(row.paid)} />
                 <Pair label="Reste dû" value={currency(row.due)} />
                 <Badge danger={number(row.due) > 0}>
-                  {String(row.paymentStatusLabel ?? 'Paiement')}
+                  {translatedReference(
+                    { label: row.paymentStatusLabel ?? 'Paiement', code: row.paymentStatusCode },
+                    tDynamic,
+                  )}
                 </Badge>
               </Card>
             </ResponsiveGrid>
@@ -393,14 +394,16 @@ function EntryDetail({
                 label="Imprimer le bon"
                 icon="print"
                 variant="primary"
-                loading={docBusy}
+                loading={docBusy === 'print'}
+                disabled={!!docBusy}
                 onPress={() => void exportDoc(true)}
               />
               <Button
-                label="Partager PDF / e-mail"
+                label="Envoyer le bon par e-mail"
                 icon="picture-as-pdf"
                 variant="tonal"
-                disabled={docBusy}
+                loading={docBusy === 'mail'}
+                disabled={!!docBusy}
                 onPress={() => void exportDoc()}
               />
               {!document ? (
@@ -413,7 +416,7 @@ function EntryDetail({
               ) : null}
             </ResponsiveGrid>
             {docError ? <Notice>{docError}</Notice> : null}
-            {!document && can('entries.update') ? (
+            {!document && onEdit && can('entries.update') ? (
               <Button
                 label="Modifier l’entrée"
                 icon="edit"
@@ -455,7 +458,7 @@ function EntryDetail({
             );
             return;
           }
-          if (data) onEdit(data);
+          if (data) onEdit?.(data);
         }}
       />
     </CommerceScreen>

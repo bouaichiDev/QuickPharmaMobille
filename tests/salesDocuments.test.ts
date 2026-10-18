@@ -1,5 +1,10 @@
 import { receiptBarcode, generateCode128 } from '../src/features/sales/receiptBarcode';
-import { receiptHtml, receiptSummary, receiptCustomer } from '../src/features/sales/SaleDocuments';
+import {
+  receiptHtml,
+  receiptItemTotal,
+  receiptSummary,
+  receiptCustomer,
+} from '../src/features/sales/SaleDocuments';
 jest.mock('../src/features/sales/SalesDesign', () => ({
   money: (value: unknown) => Number(value ?? 0).toFixed(2),
 }));
@@ -22,6 +27,11 @@ const data = {
   items: [{ title: 'Produit <test>', qte: 2, price: 100 }],
 };
 describe('web-compatible sales documents', () => {
+  it('keeps line discounts in the receipt instead of showing the gross amount', () => {
+    const row = { title: 'Produit', qte: 2, price: 100, discount: 5, callDiscount: 10 };
+    expect(receiptItemTotal(row)).toBe(190);
+    expect(receiptHtml({ ...data, items: [row] })).toContain('190.00');
+  });
   it('uses discounted tax and distinguishes debt from change', () => {
     expect(receiptSummary(data)).toMatchObject({
       tax: 36,

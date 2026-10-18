@@ -1,6 +1,7 @@
 import { apiGet, httpClient } from '@/services/api/client';
 import { listPayload } from '@/features/crm/crmApi';
 export interface StockProduct {
+  stockMetadataLoaded?: boolean;
   id: number;
   productName: string;
   sku: string;

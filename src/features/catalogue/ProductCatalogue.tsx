@@ -1,4 +1,7 @@
 import { ProductInventory } from './ProductInventory';
+import { ProductPhoto } from './ProductPhoto';
+import { loadWebCatalogue } from './webCatalogue';
+import { ProductPrice } from './ProductPrice';
 import { canAssociateBarcode } from './stockApi';
 import { useStockApi, StockContext } from './StockContext';
 
@@ -46,17 +49,7 @@ import { StockProductCard } from './StockProductCard';
 import { StockHeader } from './StockHeader';
 import { TabletStockDetail } from './TabletStockDetail';
 
-import {
-  SBadge,
-  SButton,
-  SNote,
-  SSearch,
-  STabs,
-  StockPage,
-  st,
-  useDebounce,
-  money,
-} from './StockDesign';
+import { SBadge, SButton, SNote, SSearch, STabs, StockPage, st, useDebounce } from './StockDesign';
 
 export function ProductCatalogue() {
   const { category_id } = useLocalSearchParams<{ category_id?: string }>();
@@ -128,16 +121,32 @@ function ProductCatalogueContent() {
   const categories = useCategories('');
 
   const query = useQuery({
-    queryKey: ['catalogue', scope, { settled, filter, category, page, locationFilter }],
+    queryKey: [
+      'catalogue',
+      scope,
+      {
+        settled,
+        filter,
+        category,
+        page,
+        locationFilter,
+        source: 'web',
+        sortField: 'id',
+        sortOrder: 'desc',
+      },
+    ],
 
     queryFn: ({ signal }) =>
-      stockApi.products(
+      (preview ? stockApi.products : loadWebCatalogue)(
         {
           search: settled,
           filter,
           category_id: category || undefined,
           page,
           location_id: locationFilter,
+          sortField: 'id',
+          sortOrder: 'desc',
+          per_page: 10,
         },
 
         signal,
@@ -258,6 +267,7 @@ function ProductCatalogueContent() {
           ['available', `Disponibles ${query.data?.counts?.available ?? ''}`],
 
           ['low', `Stock faible ${query.data?.counts?.low ?? ''}`],
+          ['expiring', 'Expire bientôt'],
 
           ['missing', `Sans code-barres ${query.data?.counts?.missing ?? ''}`],
           ['parapharmacy', `Parapharmacie ${query.data?.counts?.parapharmacy ?? ''}`],
@@ -319,6 +329,11 @@ function ProductCatalogueContent() {
           ]}
         >
           <View style={st.row}>
+            {p.images && p.images !== '[]' ? (
+              <ProductPhoto product={p} size={48} />
+            ) : (
+              <Icon name="medication" color="primary" size={28} />
+            )}
             <AppText variant="headlineSm" color="primary" style={st.grow}>
               {p.productName}
               {detailId === p.id ? ' ✓' : ''}
@@ -342,9 +357,7 @@ function ProductCatalogueContent() {
             >
               <Icon name="inventory-2" color="primary" size={22} />
             </Pressable>
-            <AppText variant="labelLg" color="primary">
-              {money(p.sellingPrice)} DH
-            </AppText>
+            <ProductPrice product={p} />
           </View>
           <View style={st.row}>
             <AppText variant="bodySm" color="primary" numberOfLines={1} style={st.grow}>

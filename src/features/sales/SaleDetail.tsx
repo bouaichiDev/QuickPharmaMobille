@@ -1,6 +1,7 @@
 import { printSalePdf, printSaleReceipt } from './printSalePdf';
 import { SaleReceipt } from './SaleReceipt';
 import { ReceiptImageExport } from './ReceiptImageExport';
+import { record } from '@/features/crm/crmApi';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -10,8 +11,8 @@ import { AppText } from '@/components/ui/AppText';
 import { Icon } from '@/components/ui/Icon';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { errorMessage } from '@/utils/errorMessage';
-import { salesApi } from './salesApi';
-import { receiptCustomer, type ReceiptData } from './SaleDocuments';
+import { saleLineTotal, salesApi } from './salesApi';
+import { receiptCustomer, receiptItemTotal, type ReceiptData } from './SaleDocuments';
 import { PosAvatar, PosBadge, PosButton, PosLine, PosPage, money, pos, s } from './SalesDesign';
 import { paymentLabels, paymentState, referenceText, saleDate } from './salesModel';
 import type { CompletedSale } from './SaleCheckout';
@@ -41,6 +42,9 @@ export function completedReceipt(completed: CompletedSale): ReceiptData {
       title: line.product.productName,
       qte: line.quantity,
       price: line.product.sellingPrice,
+      discount: line.discount ?? 0,
+      callDiscount:
+        Math.round((line.quantity * line.product.sellingPrice - saleLineTotal(line)) * 100) / 100,
     })),
   };
 }
@@ -68,6 +72,7 @@ export function SaleDetail({
   const [visibleItems, setVisibleItems] = useState(20);
   const [busy, setBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [mailing, setMailing] = useState(false);
   const query = useQuery({
     queryKey: ['sale', store, id],
     queryFn: ({ signal }) => salesApi.detail(id, signal),
@@ -75,6 +80,32 @@ export function SaleDetail({
     staleTime: 30000,
   });
   const data = query.data ?? (completed ? completedReceipt(completed) : undefined);
+  async function email() {
+    if (!data || busy) return;
+    setBusy(true);
+    setMailing(true);
+    setDocumentError('');
+    try {
+      const customer = record(data.sale.customer);
+      const recipient =
+        data.sale.customersEmail ??
+        customer.Email ??
+        customer.email ??
+        completed?.customer?.Email ??
+        completed?.customer?.email;
+      const { emailSalePdf } = await import('./saleMail');
+      await emailSalePdf(
+        id,
+        String(data.sale.ref ?? id),
+        recipient ? String(recipient) : undefined,
+      );
+    } catch (error) {
+      setDocumentError(errorMessage(error, translation));
+    } finally {
+      setMailing(false);
+      setBusy(false);
+    }
+  }
   async function print(format: 'pdf' | 'receipt' = 'pdf') {
     if (!data || busy) return;
     setBusy(true);
@@ -120,12 +151,20 @@ export function SaleDetail({
           <PosButton
             label="PDF de vente"
             icon="picture-as-pdf"
-            loading={busy}
-            disabled={!data}
+            loading={busy && !mailing}
+            disabled={!data || busy}
             onPress={() => void print()}
           />
         </View>
       </View>
+      <PosButton
+        label="Envoyer le PDF par e-mail"
+        icon="mail-outline"
+        secondary
+        loading={mailing}
+        disabled={!data || busy || !id}
+        onPress={() => void email()}
+      />
       <PosButton
         label="Imprimer le ticket de caisse"
         icon="print"
@@ -339,7 +378,7 @@ export function SaleDetail({
                     </AppText>
                   </View>
                   <AppText variant="labelLg" style={{ color: pos.blue }}>
-                    {money(Number(row.qte ?? 0) * Number(row.price ?? 0))} DH
+                    {money(receiptItemTotal(row))} DH
                   </AppText>
                 </View>
               ))}

@@ -338,6 +338,18 @@ it('shows category products and line statistics and reloads the selected period'
   summary.mockRestore();
 });
 
+it('shows the original price and the product discount in the stock list', () => {
+  const screen = render(
+    <StockProductCard
+      product={{ ...product, sellingPrice: 100, discount: 5 }}
+      onDetail={jest.fn()}
+      onBarcode={jest.fn()}
+    />,
+  );
+  expect(screen.getByText('100,00 DH')).toBeTruthy();
+  expect(screen.getByText('95,00 DH')).toBeTruthy();
+  expect(screen.getByText('Remise : 5 %')).toBeTruthy();
+});
 it('opens the inventory action for its product without opening the detail card', () => {
   const onInventory = jest.fn();
   const onDetail = jest.fn();
@@ -362,13 +374,11 @@ it('opens the inventory action for its product without opening the detail card',
   ).toBe(true);
 });
 it('loads inventory for the selected product and displays its available lots', async () => {
-  const detail = jest
-    .fn()
-    .mockResolvedValue({
-      product,
-      lots: [{ quantity: 12, location: 'Rayon A', expiry: '2027-01-01' }],
-      movements: [],
-    });
+  const detail = jest.fn().mockResolvedValue({
+    product,
+    lots: [{ quantity: 12, location: 'Rayon A', expiry: '2027-01-01' }],
+    movements: [],
+  });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });

@@ -248,3 +248,14 @@ Implementation : cartes blanches, encarts bleus clairs, badges turquoise, formul
 Verification effectuee : tests React Native des listes, filtres, fiches et creation de magasin avec API simulee ; tests des montants, expirations, contrats JSON, permissions du menu et protection lecture seule. Aucune creation/modification sur l'API de production.
 
 Limite : aucun serveur ni application demarre, conformement a la consigne utilisateur. Pas de capture du rendu implemente dans le meme viewport que Stitch ; la comparaison visuelle exigee par image-to-code/design-qa reste bloquee. Ni fidelite pixel par pixel, ni test camera/impression natif, ni score DEX de la prochaine AAB ne sont certifies.
+
+## Fournisseurs, commandes clients et rapports — 18 octobre 2026
+
+- Référence : C:/Users/badz_/Downloads/Nouveau dossier (5)/stitch_quickpharma_logo_integration.
+- Choix utilisateur confirmé : reprendre les commandes clients du web, avec réservation du stock. Les écrans Stitch de commandes fournisseurs et de réception ne définissent pas de nouvelles opérations métier.
+- Menus Fournisseurs, Commandes et Rapports reliés aux écrans mobiles et aux permissions existantes. En-tête partagé et logo de pharmacie conservés.
+- Fournisseurs : recherche paginée, fiche, création/modification, archivage confirmé et entrées liées. Commandes : création/modification, remise par ligne, réservation, validation et annulation confirmées, retours et PDF serveur avec composition e-mail native.
+- Rapports : ventes, entrées, commandes et mouvements produits selon les quatre contrats API existants. Synthèses serveur, filtres de période/statut, listes paginées et exports PDF/CSV limités à 1 000 lignes, avec indication de troncature. Aucun indicateur fictif des maquettes ajouté.
+- Assistance : mutations et exports protégés ; la validation historique par GET est également bloquée en lecture seule.
+- Vérifications : tests automatisés avec API simulée ; aucun appel métier de création/modification à la production et aucun serveur démarré.
+- final result: blocked (visual QA only). Comparaison visuelle des nouveaux écrans et tests des sélecteurs natifs caméra/mail/impression non exécutés : respecter la consigne utilisateur de ne pas lancer l'application. Les maquettes constituent des références, pas une preuve du rendu final.

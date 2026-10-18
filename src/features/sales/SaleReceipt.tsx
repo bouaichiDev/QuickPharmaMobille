@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
-import { receiptCustomer, receiptSummary, type ReceiptData } from './SaleDocuments';
+import {
+  receiptCustomer,
+  receiptItemTotal,
+  receiptSummary,
+  type ReceiptData,
+} from './SaleDocuments';
 import { receiptBarcode } from './receiptBarcode';
 import { PosButton, money } from './SalesDesign';
 import { saleDate } from './salesModel';
@@ -91,7 +96,7 @@ export function SaleReceipt({ data, complete = false }: { data: ReceiptData; com
             {String(row.qte ?? 0)}
           </AppText>
           <AppText align="right" style={[text, { flex: 2.5 }]}>
-            {money(Number(row.qte ?? 0) * Number(row.price ?? 0))}
+            {money(receiptItemTotal(row))}
           </AppText>
         </View>
       ))}

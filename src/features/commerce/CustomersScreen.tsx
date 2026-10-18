@@ -1,3 +1,4 @@
+import { SearchFilterRow } from '@/components/ui/SearchFilterRow';
 import { lazy, memo, Suspense, useState } from 'react';
 import { Linking, Pressable, Switch, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -133,27 +134,17 @@ export default function CustomersScreen() {
                     />
                   ) : null}
                 </View>
-                <View style={ui.row}>
-                  <View style={ui.grow}>
-                    <TextField
-                      label="Rechercher un client"
-                      placeholder="Nom, CIN, téléphone…"
-                      value={search}
-                      onChangeText={setSearch}
-                    />
-                  </View>
-                  <Button
-                    label={`Filtres${count ? ` (${count})` : ''}`}
-                    icon="tune"
-                    compact
-                    fullWidth={false}
-                    variant="tonal"
-                    onPress={() => {
-                      setDraft(filters);
-                      setFilterOpen(true);
-                    }}
-                  />
-                </View>
+                <SearchFilterRow
+                  label="Rechercher un client"
+                  placeholder="Nom, CIN, téléphone…"
+                  value={search}
+                  onChangeText={setSearch}
+                  filterLabel={`Filtres${count ? ` (${count})` : ''}`}
+                  onFilterPress={() => {
+                    setDraft(filters);
+                    setFilterOpen(true);
+                  }}
+                />
                 {count ? (
                   <View style={ui.row}>
                     {Object.entries(filters)

@@ -1,9 +1,11 @@
 import { canAssociateBarcode } from './stockApi';
+import { ProductPrice } from './ProductPrice';
+import { ProductPhoto } from './ProductPhoto';
 import { Pressable, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Icon } from '@/components/ui/Icon';
 import { type StockProduct, productCode } from './stockApi';
-import { SBadge, SButton, st, money } from './StockDesign';
+import { SBadge, SButton, st } from './StockDesign';
 export function StockProductCard({
   product: p,
   onDetail,
@@ -31,6 +33,22 @@ export function StockProductCard({
         onPress={onDetail}
         style={st.row}
       >
+        {p.images && p.images !== '[]' ? (
+          <ProductPhoto product={p} size={56} />
+        ) : (
+          <View
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 10,
+              backgroundColor: '#eff4ff',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="medication" color="primary" size={26} />
+          </View>
+        )}
         <View style={[st.grow, { gap: 3 }]}>
           <View style={[st.row, { flexWrap: 'wrap', gap: 4 }]}>
             <SBadge label={p.categoryName || 'Catalogue'} />
@@ -106,9 +124,7 @@ export function StockProductCard({
           <AppText variant="labelSm" color="outline">
             Prix public unitaire
           </AppText>
-          <AppText variant="headlineSm" color="primary">
-            {money(p.sellingPrice)} DH
-          </AppText>
+          <ProductPrice product={p} />
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <AppText variant="labelSm" color="outline">
@@ -125,7 +141,8 @@ export function StockProductCard({
       <View style={[st.row, { backgroundColor: '#eff4ff', padding: 8, borderRadius: 8 }]}>
         <Icon name="view-module" color="outline" size={14} />
         <AppText variant="labelSm" style={st.grow} numberOfLines={1}>
-          {p.locationName || 'Aucun emplacement'}
+          {p.locationName ||
+            (p.stockMetadataLoaded === false ? 'Consulter les emplacements' : 'Aucun emplacement')}
           {p.location_hint ? ` • ${p.location_hint}` : ''}
         </AppText>
         {code ? (

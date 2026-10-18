@@ -22,6 +22,7 @@ interface ScreenProps {
   edges?: Edge[];
   keyboard?: boolean;
   header?: ReactNode;
+  footer?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   innerStyle?: StyleProp<ViewStyle>;
   background?: keyof typeof colors;
@@ -35,6 +36,7 @@ export function Screen({
   edges = ['top'],
   keyboard = false,
   header,
+  footer,
   contentStyle,
   innerStyle,
   background = 'background',
@@ -42,7 +44,8 @@ export function Screen({
   const { landscape } = useResponsiveLayout();
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={[styles.content, contentStyle]}
+      testID="screen-scroll-content"
+      contentContainerStyle={[styles.content, styles.scrollContent, contentStyle]}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         onRefresh ? (
@@ -58,7 +61,9 @@ export function Screen({
       <View style={[styles.inner, innerStyle]}>{children}</View>
     </ScrollView>
   ) : (
-    <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>
+    <View testID="screen-static-content" style={[styles.content, styles.fill, contentStyle]}>
+      {children}
+    </View>
   );
 
   return (
@@ -73,9 +78,13 @@ export function Screen({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           {body}
+          {footer}
         </KeyboardAvoidingView>
       ) : (
-        body
+        <>
+          {body}
+          {footer}
+        </>
       )}
     </SafeAreaView>
   );
@@ -87,10 +96,10 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: layout.screenPadding,
-    paddingBottom: spacing.xxxl,
     gap: spacing.xl,
     flexGrow: 1,
   },
+  scrollContent: { paddingBottom: spacing.xxxl },
   inner: {
     width: '100%',
     maxWidth: layout.maxContentWidth,

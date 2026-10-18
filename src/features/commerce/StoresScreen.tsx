@@ -1,3 +1,4 @@
+import { SearchFilterRow } from '@/components/ui/SearchFilterRow';
 import { memo, useState } from 'react';
 import { Image, Linking, Pressable, View } from 'react-native';
 import { Stack, router } from 'expo-router';
@@ -163,27 +164,17 @@ export default function StoresScreen() {
                     Assistance en lecture seule. Aucun magasin ne peut être modifié ou sélectionné.
                   </Notice>
                 ) : null}
-                <View style={ui.row}>
-                  <View style={ui.grow}>
-                    <TextField
-                      label="Rechercher un magasin"
-                      placeholder="Nom, adresse, téléphone…"
-                      value={search}
-                      onChangeText={setSearch}
-                    />
-                  </View>
-                  <Button
-                    label="Filtres"
-                    compact
-                    fullWidth={false}
-                    variant="tonal"
-                    icon="tune"
-                    onPress={() => {
-                      setDraft(filters);
-                      setFilterOpen(true);
-                    }}
-                  />
-                </View>
+                <SearchFilterRow
+                  label="Rechercher un magasin"
+                  placeholder="Nom, adresse, téléphone…"
+                  value={search}
+                  onChangeText={setSearch}
+
+                  onFilterPress={() => {
+                    setDraft(filters);
+                    setFilterOpen(true);
+                  }}
+                />
               </>
             }
           />

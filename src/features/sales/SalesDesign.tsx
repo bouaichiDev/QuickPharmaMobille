@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/navigation/PageHeader';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -76,24 +77,8 @@ export function PosHeader({
   accessory?: ReactNode;
 }) {
   return (
-    <View style={s.header}>
-      {onBack ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Retour"
-          onPress={onBack}
-          style={s.iconButton}
-        >
-          <Icon name="arrow-back" color="primary" />
-        </Pressable>
-      ) : (
-        <View style={s.iconTile}>
-          <Icon name="point-of-sale" color="primary" />
-        </View>
-      )}
-      <AppText variant="headlineMd" style={s.grow} numberOfLines={1}>
-        {title}
-      </AppText>
+    <View>
+      <PageHeader title={title} onBack={onBack} />
       {accessory}
     </View>
   );

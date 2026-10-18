@@ -32,6 +32,7 @@ import {
   type EntryLine,
 } from './entryModel';
 import type { EntryData } from './EntriesScreen';
+import { defaultEntryPayment, defaultEntryProvider, defaultEntryStatus } from './entryDefaults';
 const Scanner = lazy(() => import('@/features/catalogue/StockScannerCamera'));
 
 export default function EntryForm({
@@ -45,8 +46,9 @@ export default function EntryForm({
 }) {
   const row = data?.entry,
     qc = useQueryClient(),
-    { can } = useCommerceAccess();
+    { can, store } = useCommerceAccess();
   const [step, setStep] = useState(1),
+    [autoPaid, setAutoPaid] = useState(!row),
     [dirty, setDirty] = useState(false),
     [leave, setLeave] = useState(false);
   const [form, setForm] = useState<EntryFormData>(() => ({
@@ -62,12 +64,68 @@ export default function EntryForm({
     note: String(row?.note ?? ''),
   }));
   const [lines, setLines] = useState<EntryLine[]>(data ? linesFrom(data.items) : []),
-    [picking, setPicking] = useState(false),
+    [picking, setPicking] = useState<'search' | 'scan'>(),
     [line, setLine] = useState<EntryLine>(),
     [error, setError] = useState('');
   const [limit, setLimit] = useState(20),
-    [removed, setRemoved] = useState<EntryLine>();
+    [removed, setRemoved] = useState<EntryLine>(),
+    [noteOpen, setNoteOpen] = useState(false);
+  // Share the picker cache: defaults do not trigger a second request when opened.
+  const providers = useQuery({
+    queryKey: ['commerce-reference', store, '/providerDropdown', {}, '', 1],
+    queryFn: ({ signal }) =>
+      commerceApi.list('/providerDropdown', { search: '', page: 1, per_page: 50 }, signal),
+    enabled: !row && can('entries.create'),
+    staleTime: 300_000,
+    retry: false,
+  });
+  const statuses = useQuery({
+    queryKey: ['commerce-reference', store, '/statuses', { src: 'entrees' }, '', 1],
+    queryFn: ({ signal }) =>
+      commerceApi.list('/statuses', { src: 'entrees', search: '', page: 1, per_page: 50 }, signal),
+    enabled: !row && can('entries.create'),
+    staleTime: 300_000,
+    retry: false,
+  });
+  const paymentTypes = useQuery({
+    queryKey: ['commerce-reference', store, '/types/payments', {}, '', 1],
+    queryFn: ({ signal }) =>
+      commerceApi.list('/types/payments', { search: '', page: 1, per_page: 50 }, signal),
+    enabled: can(row ? 'entries.update' : 'entries.create'),
+    staleTime: 300000,
+    retry: false,
+  });
+  const paymentStatuses = useQuery({
+    queryKey: ['commerce-reference', store, '/statuses', { src: 'payments' }, '', 1],
+    queryFn: ({ signal }) =>
+      commerceApi.list('/statuses', { src: 'payments', search: '', page: 1, per_page: 50 }, signal),
+    enabled: can(row ? 'entries.update' : 'entries.create'),
+    staleTime: 300000,
+    retry: false,
+  });
+  const paidStatus = defaultEntryPayment(paymentStatuses.data?.rows ?? [], 'paid');
+  const paymentStatus = form.paymentStatus || (!row ? paidStatus : '');
+  const total = entryTotals(
+    lines,
+    number(form.discount.replace(',', '.')),
+    number(form.tax.replace(',', '.')),
+    0,
+  ).total;
+  const effectiveForm = {
+    ...form,
+    provider_id: form.provider_id || (!row ? defaultEntryProvider(providers.data?.rows ?? []) : ''),
+    status: form.status || (!row ? defaultEntryStatus(statuses.data?.rows ?? []) : ''),
+    paymentType:
+      form.paymentType || (!row ? defaultEntryPayment(paymentTypes.data?.rows ?? [], 'cash') : ''),
+    paymentStatus,
+    paid:
+      autoPaid && !!paidStatus && paymentStatus === paidStatus
+        ? String(Math.max(0, total))
+        : form.paid,
+  };
   const update = (key: keyof EntryFormData, value: string) => {
+    if (key === 'paid') setAutoPaid(false);
+    if (key === 'discount' || key === 'tax' || key === 'paymentStatus') setAutoPaid(true);
     setForm({ ...form, [key]: value });
     setDirty(true);
   };
@@ -75,7 +133,7 @@ export default function EntryForm({
     lines,
     number(form.discount.replace(',', '.')),
     number(form.tax.replace(',', '.')),
-    number(form.paid.replace(',', '.')),
+    number(effectiveForm.paid.replace(',', '.')),
   );
   const mutation = useMutation({
     mutationFn: async () => {
@@ -83,7 +141,7 @@ export default function EntryForm({
       return commerceApi.write(
         'post',
         row ? '/entreesupdate' : '/entrees',
-        entryPayload(form, lines, row ? itemId(row) : undefined),
+        entryPayload(effectiveForm, lines, row ? itemId(row) : undefined),
       );
     },
     onSuccess: async (result) => {
@@ -101,7 +159,10 @@ export default function EntryForm({
   const back = () => !mutation.isPending && (dirty ? setLeave(true) : onClose());
   function next() {
     setError('');
-    if (step === 1 && (!form.date || !form.ref.trim() || !form.provider_id || !form.status)) {
+    if (
+      step === 1 &&
+      (!form.date || !form.ref.trim() || !effectiveForm.provider_id || !effectiveForm.status)
+    ) {
       setError('Renseignez la référence, la date, le fournisseur et le statut.');
       return;
     }
@@ -112,7 +173,43 @@ export default function EntryForm({
     setStep(step + 1);
   }
   return (
-    <CommerceScreen title={row ? 'Modifier l’entrée' : 'Nouvelle entrée de stock'} onBack={back}>
+    <CommerceScreen
+      title={row ? 'Modifier l’entrée' : 'Nouvelle entrée de stock'}
+      onBack={back}
+      footer={
+        can(row ? 'entries.update' : 'entries.create') ? (
+          <View style={{ gap: 8 }}>
+            {error || mutation.isError ? (
+              <AppText variant="bodySm" color="error" accessibilityRole="alert">
+                {error || mutation.error?.message}
+              </AppText>
+            ) : null}
+            <View testID="entry-step-actions" style={ui.row}>
+              <Button
+                label="Précédent"
+                icon="arrow-back"
+                variant="tonal"
+                fullWidth={false}
+                style={ui.grow}
+                disabled={step === 1 || mutation.isPending}
+                onPress={() => {
+                  setError('');
+                  setStep(step - 1);
+                }}
+              />
+              <Button
+                label={step < 3 ? 'Suivant' : 'Enregistrer'}
+                trailingIcon={step < 3 ? 'arrow-forward' : 'check-circle-outline'}
+                fullWidth={false}
+                style={ui.grow}
+                loading={mutation.isPending}
+                onPress={() => (step < 3 ? next() : mutation.mutate())}
+              />
+            </View>
+          </View>
+        ) : undefined
+      }
+    >
       <AccessGate permission={row ? 'entries.update' : 'entries.create'}>
         <View style={ui.row}>
           {['1. Informations', '2. Produits', '3. Récapitulatif'].map((label, i) => (
@@ -137,35 +234,51 @@ export default function EntryForm({
               <ReferenceSelect
                 label="Fournisseur *"
                 path="/providerDropdown"
-                value={form.provider_id}
+                value={effectiveForm.provider_id}
                 onChange={(v) => update('provider_id', v)}
               />
               <ReferenceSelect
                 label="Statut de l’entrée *"
                 path="/statuses"
                 params={{ src: 'entrees' }}
-                value={form.status}
+                value={effectiveForm.status}
                 onChange={(v) => update('status', v)}
               />
             </Card>
-            <Card title="Note" icon="notes">
-              <TextField
+            <Card>
+              <Button
                 label="Note (facultatif)"
-                multiline
-                value={form.note}
-                onChangeText={(v) => update('note', v)}
+                icon="notes"
+                variant="ghost"
+                trailingIcon={noteOpen ? 'expand-less' : 'expand-more'}
+                onPress={() => setNoteOpen(!noteOpen)}
               />
-              <Notice>Les montants et le paiement seront vérifiés au récapitulatif.</Notice>
+              {noteOpen ? (
+                <TextField
+                  label="Votre note"
+                  multiline
+                  value={form.note}
+                  onChangeText={(v) => update('note', v)}
+                />
+              ) : null}
             </Card>
           </ResponsiveGrid>
         ) : null}
         {step === 2 ? (
           <>
-            <Button
-              label="Rechercher ou scanner un produit"
-              icon="qr-code-scanner"
-              onPress={() => setPicking(true)}
-            />
+            <ResponsiveGrid maxColumns={2}>
+              <Button
+                label="Rechercher un produit"
+                icon="search"
+                variant="tonal"
+                onPress={() => setPicking('search')}
+              />
+              <Button
+                label="Scanner un produit"
+                icon="qr-code-scanner"
+                onPress={() => setPicking('scan')}
+              />
+            </ResponsiveGrid>
             <AppText variant="headlineSm">Lignes du bon · {lines.length} article(s)</AppText>
             <ResponsiveGrid maxColumns={3}>
               {lines.slice(0, limit).map((l) => (
@@ -186,7 +299,9 @@ export default function EntryForm({
                   <View style={ui.inset}>
                     <Pair label="Quantité" value={l.qte} />
                     <Pair label="P. U. achat" value={currency(l.price)} />
-                    <Pair label="Expiration" value={l.dateExperation ?? 'Non renseignée'} />
+                    {l.hasExpiration || (l.hasExpiration == null && l.dateExperation) ? (
+                      <Pair label="Expiration" value={l.dateExperation ?? 'Non renseignée'} />
+                    ) : null}
                     <Pair label="Total" value={currency(l.qte * l.price)} />
                   </View>
                   <Button
@@ -252,20 +367,20 @@ export default function EntryForm({
               <ReferenceSelect
                 label="Mode de paiement *"
                 path="/types/payments"
-                value={form.paymentType}
+                value={effectiveForm.paymentType}
                 onChange={(v) => update('paymentType', v)}
               />
               <ReferenceSelect
                 label="Statut du paiement *"
                 path="/statuses"
                 params={{ src: 'payments' }}
-                value={form.paymentStatus}
+                value={effectiveForm.paymentStatus}
                 onChange={(v) => update('paymentStatus', v)}
               />
               <TextField
                 label="Montant payé (DH)"
                 keyboardType="decimal-pad"
-                value={form.paid}
+                value={effectiveForm.paid}
                 onChangeText={(v) => update('paid', v)}
               />
               <Pair label="Reste à payer" value={currency(totals.due)} />
@@ -275,30 +390,6 @@ export default function EntryForm({
               </Notice>
             </Card>
           </ResponsiveGrid>
-        ) : null}
-        {error ? <Notice>{error}</Notice> : null}
-        {mutation.isError ? <ErrorState error={mutation.error} /> : null}
-        {step < 3 ? (
-          <Button
-            label={step === 1 ? 'Continuer vers les produits' : 'Passer au récapitulatif'}
-            trailingIcon="arrow-forward"
-            onPress={next}
-          />
-        ) : (
-          <Button
-            label="Valider et enregistrer l’entrée"
-            icon="check-circle-outline"
-            loading={mutation.isPending}
-            onPress={() => mutation.mutate()}
-          />
-        )}
-        {step > 1 ? (
-          <Button
-            label="Étape précédente"
-            variant="tonal"
-            disabled={mutation.isPending}
-            onPress={() => setStep(step - 1)}
-          />
         ) : null}
         <ConfirmDialog
           visible={leave}
@@ -311,9 +402,10 @@ export default function EntryForm({
         />
         {picking ? (
           <ProductPicker
-            onClose={() => setPicking(false)}
+            initialScan={picking === 'scan'}
+            onClose={() => setPicking(undefined)}
             onSelect={(p) => {
-              setPicking(false);
+              setPicking(undefined);
               setLine({
                 key: `new-${Date.now()}`,
                 product_id: p.id,
@@ -349,14 +441,16 @@ export default function EntryForm({
 export function ProductPicker({
   onClose,
   onSelect,
+  initialScan = false,
 }: {
   onClose: () => void;
   onSelect: (p: StockProduct) => void;
+  initialScan?: boolean;
 }) {
   const [search, setSearch] = useState(''),
     term = useDebounce(search),
     [page, setPage] = useState(1),
-    [scan, setScan] = useState(false),
+    [scan, setScan] = useState(initialScan),
     [error, setError] = useState(''),
     [looking, setLooking] = useState(false);
   const { store } = useCommerceAccess(),
@@ -365,7 +459,7 @@ export function ProductPicker({
   const query = useQuery({
     queryKey: ['commerce-product', store, term, page],
     queryFn: ({ signal }) => stockApi.products({ search: term, page, per_page: 20 }, signal),
-    enabled: !scan,
+    enabled: !scan || !!term,
     staleTime: 30_000,
     retry: false,
   });
@@ -420,7 +514,7 @@ export function ProductPicker({
       ) : null}
       {looking ? <ActivityIndicator /> : null}
       {error ? <Notice>{error}</Notice> : null}
-      {!scan ? (
+      {!scan || !!term ? (
         query.isPending ? (
           <ActivityIndicator />
         ) : query.isError ? (
@@ -463,7 +557,7 @@ export function ProductPicker({
     </SelectionDialog>
   );
 }
-function LineEditor({
+export function LineEditor({
   line,
   onClose,
   onSave,
@@ -476,6 +570,17 @@ function LineEditor({
     [price, setPrice] = useState(String(line.price)),
     [expiry, setExpiry] = useState(line.dateExperation ?? ''),
     [error, setError] = useState('');
+  const { store } = useCommerceAccess();
+  const product = useQuery({
+    queryKey: ['entry-product-expiration', store, line.product_id],
+    queryFn: ({ signal }) => stockApi.detail(line.product_id, signal),
+    enabled: line.hasExpiration == null,
+    staleTime: 300000,
+    retry: false,
+  });
+  const hasExpiration =
+    line.hasExpiration ??
+    (product.data ? Number(product.data.product.hasExpiration) === 1 : undefined);
   return (
     <SelectionDialog visible title={line.title} onClose={onClose}>
       <Badge>{line.ref}</Badge>
@@ -491,16 +596,19 @@ function LineEditor({
         value={price}
         onChangeText={setPrice}
       />
-      <DateInput
-        label={`Expiration${line.hasExpiration ? ' *' : ' (facultatif)'}`}
-        value={expiry}
-        onChange={setExpiry}
-      />
+      {hasExpiration ? (
+        <DateInput label="Expiration *" value={expiry} onChange={setExpiry} />
+      ) : null}
+      {line.hasExpiration == null && product.isPending ? <ActivityIndicator /> : null}
+      {product.isError ? (
+        <Notice>Impossible de vérifier l’expiration du produit. Fermez puis réessayez.</Notice>
+      ) : null}
       <Pair label="Total ligne" value={currency(number(qty) * number(price.replace(',', '.')))} />
       {error ? <Notice>{error}</Notice> : null}
       <Button
         label="Ajouter au bon"
         icon="add-task"
+        disabled={hasExpiration == null}
         onPress={() => {
           const q = Number(qty),
             p = Number(price.replace(',', '.'));
@@ -508,11 +616,17 @@ function LineEditor({
             setError('Quantité entière positive et prix valide requis.');
             return;
           }
-          if (line.hasExpiration && !expiry) {
+          if (hasExpiration && !expiry) {
             setError('L’expiration est obligatoire pour ce produit.');
             return;
           }
-          onSave({ ...line, qte: q, price: p, dateExperation: expiry || null });
+          onSave({
+            ...line,
+            qte: q,
+            price: p,
+            hasExpiration,
+            dateExperation: hasExpiration ? expiry : null,
+          });
         }}
       />
       <Button label="Annuler" variant="tonal" onPress={onClose} />

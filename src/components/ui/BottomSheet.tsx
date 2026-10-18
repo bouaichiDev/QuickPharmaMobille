@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useCallback,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -41,23 +43,29 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
   const [offset] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    if (visible) offset.setValue(0);
-  }, [visible, offset]);
   const pointerStart = useRef<number | null>(null);
-  const finishDrag = (dy: number, velocity = 0) => {
-    if (dy > 90 || (dy > 20 && velocity > 0.8)) {
-      Animated.timing(offset, {
-        toValue: 800,
-        duration: 180,
-        useNativeDriver: Platform.OS !== 'web',
-      }).start(({ finished }) => {
-        if (finished) onClose();
-      });
-    } else {
-      Animated.spring(offset, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start();
-    }
-  };
+  useEffect(() => {
+    offset.stopAnimation();
+    offset.setValue(0);
+    pointerStart.current = null;
+    return () => offset.stopAnimation();
+  }, [visible, offset]);
+  const finishDrag = useCallback(
+    (dy: number, velocity = 0) => {
+      if (dy > 90 || (dy > 20 && velocity > 0.8)) {
+        Animated.timing(offset, {
+          toValue: 800,
+          duration: 180,
+          useNativeDriver: Platform.OS !== 'web',
+        }).start(({ finished }) => {
+          if (finished) onClose();
+        });
+      } else {
+        Animated.spring(offset, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start();
+      }
+    },
+    [offset, onClose],
+  );
   // React Native Web forwards DOM pointer events; native platforms use PanResponder.
   const webGesture = {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -81,15 +89,21 @@ export function BottomSheet({
       finishDrag(0);
     },
   };
-  const gesture = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, state) =>
-      state.dy > 8 && Math.abs(state.dy) > Math.abs(state.dx),
-    onPanResponderMove: (_, state) => offset.setValue(Math.max(0, state.dy)),
-    onPanResponderRelease: (_, state) => finishDrag(state.dy, state.vy),
-    onPanResponderTerminate: () =>
-      Animated.spring(offset, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start(),
-  });
+  const gesture = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, state) =>
+          state.dy > 8 && Math.abs(state.dy) > Math.abs(state.dx),
+        onPanResponderMove: (_, state) => offset.setValue(Math.max(0, state.dy)),
+        onPanResponderRelease: (_, state) => finishDrag(state.dy, state.vy),
+        onPanResponderTerminate: () =>
+          Animated.spring(offset, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start(),
+      }),
+    [finishDrag, offset],
+  );
+  // Remove the native touch-blocking modal before navigating to another page.
+  if (!visible) return null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>

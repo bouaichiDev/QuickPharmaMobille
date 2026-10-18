@@ -48,6 +48,7 @@ export function ProductPhoto({ product, size = 64 }: { product: StockProduct; si
     return (
       <Image
         source={{ uri: photo.data }}
+        accessibilityLabel={`Photo de ${product.productName}`}
         style={style}
         resizeMode="contain"
         onError={() => setFailedSource(photo.data)}
