@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { View } from 'react-native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SelectionDialog } from '@/components/ui/SelectionDialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { itemId } from '@/features/crm/crmApi';
@@ -9,7 +9,7 @@ import { saleLineTotal, saleTotals, type CartLine } from '@/features/sales/sales
 import type { StockProduct } from '@/features/catalogue/stockApi';
 import { ProductPrice } from '@/features/catalogue/ProductPrice';
 import { commerceApi, type Row } from './api';
-import { orderLines, orderPayload, type OrderFormData } from './orderModel';
+import { defaultOrderStatus, orderLines, orderPayload, type OrderFormData } from './orderModel';
 import {
   AccessGate,
   AppText,
@@ -39,7 +39,7 @@ export default function OrderForm({
   onClose: () => void;
   onSaved: (id?: string) => void;
 }) {
-  const { can } = useCommerceAccess(),
+  const { can, store } = useCommerceAccess(),
     qc = useQueryClient(),
     row = data?.order;
   const [step, setStep] = useState(1),
@@ -61,6 +61,22 @@ export default function OrderForm({
     [picking, setPicking] = useState<'search' | 'scan'>(),
     [editing, setEditing] = useState<{ line: CartLine; index: number }>();
   const permission = row ? 'orders.update' : 'orders.create';
+  const statuses = useQuery({
+    queryKey: ['commerce-reference', store, '/statuses', { src: 'commandes' }, '', 1],
+    queryFn: ({ signal }) =>
+      commerceApi.list(
+        '/statuses',
+        { src: 'commandes', search: '', page: 1, per_page: 50 },
+        signal,
+      ),
+    enabled: !row && can(permission),
+    staleTime: 300000,
+    retry: false,
+  });
+  const effectiveForm = {
+    ...form,
+    status: form.status || (!row ? defaultOrderStatus(statuses.data?.rows ?? []) : ''),
+  };
   const number = (value: string) => Number(value.replace(',', '.'));
   const totals = saleTotals(
     lines,
@@ -79,7 +95,7 @@ export default function OrderForm({
       return commerceApi.write(
         'post',
         row ? '/commandeupdate' : '/commandes',
-        orderPayload(form, lines, row ? itemId(row) : undefined),
+        orderPayload(effectiveForm, lines, row ? itemId(row) : undefined),
       );
     },
     onSuccess: (result) => {
@@ -99,7 +115,10 @@ export default function OrderForm({
   });
   function next() {
     setError('');
-    if (step === 1 && (!form.customer || !form.status || !form.ref || !form.date)) {
+    if (
+      step === 1 &&
+      (!effectiveForm.customer || !effectiveForm.status || !form.ref || !form.date)
+    ) {
       setError('Renseignez le client, la référence, la date et le statut.');
       return;
     }
@@ -162,6 +181,7 @@ export default function OrderForm({
                 fullWidth={false}
                 style={ui.grow}
                 loading={mutation.isPending}
+                disabled={step === 1 && (!form.customer || !effectiveForm.status)}
                 onPress={() => (step === 3 ? mutation.mutate() : next())}
               />
             </View>
@@ -192,7 +212,7 @@ export default function OrderForm({
                 label="Statut *"
                 path="/statuses"
                 params={{ src: 'commandes' }}
-                value={form.status}
+                value={effectiveForm.status}
                 onChange={(v) => update('status', v)}
               />
             </Card>

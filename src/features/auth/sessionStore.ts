@@ -118,6 +118,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     try {
       if (revokeOnServer && get().session) {
         try {
+          await import('@/features/notifications/MobilePushBridge')
+            .then((module) => module.unregisterMobilePush())
+            .catch(() => undefined);
           await authApi.logout();
         } catch (error) {
           // The local session is removed anyway; the server token may survive.

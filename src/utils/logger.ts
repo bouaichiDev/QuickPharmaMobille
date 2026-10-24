@@ -1,4 +1,4 @@
-const SENSITIVE_KEYS = /token|password|authorization|store_id|user_id|secret|email|c_password/i;
+const SENSITIVE_KEYS = /token|password|authorization|store_id|user_id|secret|email|c_password|otp|recovery|^code$/i;
 const MAX_DEPTH = 4;
 
 /** Replaces sensitive values so tokens, passwords and ids never reach the logs. */

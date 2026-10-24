@@ -36,6 +36,7 @@ export function sessionFromLogin(data: LoginResponseData, email: string): Sessio
   const defaultStore = storeFrom(data.store_id, data.store_name);
   return {
     token: data.token,
+    expiresAt: data.expires_at,
     menus: Array.isArray(data.permissions) ? (data.permissions as MenuNode[]) : undefined,
     userId: data.user_id,
     role: data.role,
@@ -72,6 +73,10 @@ export function createSessionService(
 ) {
   return {
     async persist(session: Session): Promise<void> {
+      if (session.remember === false) {
+        await storage.remove(secureKeys.session);
+        return;
+      }
       await storage.setJson(secureKeys.session, session);
     },
 
@@ -83,6 +88,10 @@ export function createSessionService(
       const stored = await storage.getJson<unknown>(secureKeys.session);
       if (!isValidSession(stored)) {
         if (stored) await storage.remove(secureKeys.session);
+        return { status: 'anonymous' };
+      }
+      if (stored.remember === false || (stored.expiresAt && Date.parse(stored.expiresAt) <= Date.now())) {
+        await storage.remove(secureKeys.session);
         return { status: 'anonymous' };
       }
 

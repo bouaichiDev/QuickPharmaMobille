@@ -1,5 +1,15 @@
 import { saleTotals, type CartLine } from '@/features/sales/salesApi';
 import type { Row } from './api';
+import { itemId } from '@/features/crm/crmApi';
+export function defaultOrderStatus(rows: Row[]): string {
+  const row = rows.find(
+    (row) =>
+      String(row.code ?? '')
+        .trim()
+        .toLowerCase() === 'created',
+  );
+  return row ? itemId(row) : '';
+}
 export interface OrderFormData {
   ref: string;
   date: string;

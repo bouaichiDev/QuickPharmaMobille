@@ -111,6 +111,7 @@ export function ServicesMenuContent({
   onOpen: (href: string) => void;
 }) {
   const { tDynamic } = useTranslation();
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   return (
     <>
       <TextField
@@ -126,7 +127,15 @@ export function ServicesMenuContent({
         );
         return items.length ? (
           <View key={`${index}-${group.title}`} style={styles.group}>
-            <View style={crmStyles.row}>
+            <Pressable
+              style={crmStyles.row}
+              disabled={!group.parent}
+              accessibilityRole={group.parent ? 'button' : undefined}
+              accessibilityState={
+                group.parent ? { expanded: !!expanded[index] || !!search } : undefined
+              }
+              onPress={() => setExpanded((current) => ({ ...current, [index]: !current[index] }))}
+            >
               <AppText
                 variant="headlineSm"
                 style={[crmStyles.grow, { fontSize: 14, lineHeight: 20 }]}
@@ -136,48 +145,56 @@ export function ServicesMenuContent({
               <AppText variant="labelSm" color="secondary">
                 {items.length} modules
               </AppText>
-            </View>
-            <View style={styles.grid}>
-              {items.map((item) => (
-                <Pressable
-                  key={item.href}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.label}${item.reason ? ` · ${item.reason}` : ''}`}
-                  accessibilityState={{ disabled: !!item.disabled }}
-                  disabled={item.disabled}
-                  onPress={() => onOpen(item.href)}
-                  style={({ pressed }) => [
-                    styles.tile,
-                    item.disabled && { opacity: 0.5, backgroundColor: colors.surfaceContainerHigh },
-                    pressed && { opacity: 0.65 },
-                  ]}
-                >
-                  <View style={styles.icon}>
-                    <Icon name={item.icon} color="primary" size={20} />
-                  </View>
-                  <View style={styles.copy}>
-                    <AppText variant="labelLg" numberOfLines={1} style={{ fontSize: 13 }}>
-                      {item.label}
-                    </AppText>
-                    <AppText
-                      variant="bodySm"
+              {group.parent ? (
+                <Icon name={expanded[index] || search ? 'expand-less' : 'expand-more'} size={20} />
+              ) : null}
+            </Pressable>
+            {!group.parent || expanded[index] || search ? (
+              <View style={styles.grid}>
+                {items.map((item) => (
+                  <Pressable
+                    key={item.href}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.label}${item.reason ? ` · ${item.reason}` : ''}`}
+                    accessibilityState={{ disabled: !!item.disabled }}
+                    disabled={item.disabled}
+                    onPress={() => onOpen(item.href)}
+                    style={({ pressed }) => [
+                      styles.tile,
+                      item.disabled && {
+                        opacity: 0.5,
+                        backgroundColor: colors.surfaceContainerHigh,
+                      },
+                      pressed && { opacity: 0.65 },
+                    ]}
+                  >
+                    <View style={styles.icon}>
+                      <Icon name={item.icon} color="primary" size={20} />
+                    </View>
+                    <View style={styles.copy}>
+                      <AppText variant="labelLg" numberOfLines={1} style={{ fontSize: 13 }}>
+                        {item.label}
+                      </AppText>
+                      <AppText
+                        variant="bodySm"
+                        color="outline"
+                        numberOfLines={1}
+                        style={{ fontSize: 11 }}
+                      >
+                        {item.reason ??
+                          descriptions[item.href.split('/').pop() ?? ''] ??
+                          'Accéder à cet espace'}
+                      </AppText>
+                    </View>
+                    <Icon
+                      name={item.disabled ? 'construction' : 'chevron-right'}
+                      size={18}
                       color="outline"
-                      numberOfLines={1}
-                      style={{ fontSize: 11 }}
-                    >
-                      {item.reason ??
-                        descriptions[item.href.split('/').pop() ?? ''] ??
-                        'Accéder à cet espace'}
-                    </AppText>
-                  </View>
-                  <Icon
-                    name={item.disabled ? 'construction' : 'chevron-right'}
-                    size={18}
-                    color="outline"
-                  />
-                </Pressable>
-              ))}
-            </View>
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         ) : null;
       })}

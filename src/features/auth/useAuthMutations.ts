@@ -12,16 +12,17 @@ interface LoginInput {
   email: string;
   password: string;
   remember: boolean;
+  otp?: string;
 }
 
-async function loginAndStart({ email, password, remember }: LoginInput) {
-  const data = await authApi.login(email, password);
+async function loginAndStart({ email, password, remember, otp }: LoginInput) {
+  const data = await authApi.login(email, password, remember, otp);
   if (remember) {
     await preferences.setString(preferenceKeys.rememberedEmail, email);
   } else {
     await preferences.remove(preferenceKeys.rememberedEmail);
   }
-  await useSessionStore.getState().signIn(sessionFromLogin(data, email));
+  await useSessionStore.getState().signIn({ ...sessionFromLogin(data, email), remember });
 }
 
 export function useLogin() {
@@ -42,7 +43,11 @@ export function useRegister() {
         storeName: values.storeName.trim(),
       });
       try {
-        await loginAndStart({ email: values.email.trim(), password: values.password, remember: true });
+        await loginAndStart({
+          email: values.email.trim(),
+          password: values.password,
+          remember: true,
+        });
         return 'signedIn';
       } catch {
         return 'loginRequired';

@@ -52,15 +52,22 @@ import { TabletStockDetail } from './TabletStockDetail';
 import { SBadge, SButton, SNote, SSearch, STabs, StockPage, st, useDebounce } from './StockDesign';
 
 export function ProductCatalogue() {
-  const { category_id } = useLocalSearchParams<{ category_id?: string }>();
-  return <ProductCatalogueContent key={category_id || 'all'} />;
+  const { category_id, product_id } = useLocalSearchParams<{
+    category_id?: string;
+    product_id?: string;
+  }>();
+  return <ProductCatalogueContent key={`${category_id || 'all'}-${product_id ?? ''}`} />;
 }
 function ProductCatalogueContent() {
   const stockApi = useStockApi();
   const searchRef = useRef<TextInput>(null);
 
   const router = useRouter();
-  const { panel, category_id } = useLocalSearchParams<{ panel?: string; category_id?: string }>();
+  const { panel, category_id, product_id } = useLocalSearchParams<{
+    panel?: string;
+    category_id?: string;
+    product_id?: string;
+  }>();
 
   const actualAccess = useAccess();
 
@@ -93,7 +100,10 @@ function ProductCatalogueContent() {
   const [evenSplit, setEvenSplit] = useState(false);
   const [locationFilter, setLocationFilter] = useState<number>();
 
-  const [selected, setSelected] = useState<number>();
+  const [selected, setSelected] = useState<number | undefined>(() => {
+    const id = Number(product_id);
+    return Number.isInteger(id) && id > 0 ? id : undefined;
+  });
   const [productInventory, setProductInventory] = useState<StockProduct>();
 
   const [scanner, setScanner] = useState<{ target?: StockProduct } | null>(null);

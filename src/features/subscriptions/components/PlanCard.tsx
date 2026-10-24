@@ -10,6 +10,7 @@ import { colors, spacing } from '@/theme';
 import { formatAmount } from '@/utils/format';
 
 import type { PlanView } from '../types';
+import { webAppAvailable } from '../openWebApp';
 
 interface PlanCardProps {
   plan: PlanView;
@@ -106,7 +107,7 @@ export function PlanCard({
       <View style={styles.actions}>
         {plan.isCurrent ? (
           <Button label={t('mobile.plans.currentPlan')} variant="tonal" disabled />
-        ) : canManage && !plan.isFree ? (
+        ) : canManage && !plan.isFree && webAppAvailable ? (
           // Payment happens on the web app only; the manager is sent there.
           <Button label={t('mobile.plans.goToWeb')} icon="open-in-new" onPress={onOpenWeb} />
         ) : null}

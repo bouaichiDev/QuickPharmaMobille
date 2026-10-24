@@ -28,6 +28,7 @@ export function translatedReference(
 ) {
   const label = String(row.label ?? row.title ?? row.name ?? row.code ?? '');
   const labels: Record<string, string> = {
+    created: 'Créée',
     complete: 'Terminée',
     completed: 'Terminée',
     pending: 'En attente',

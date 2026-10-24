@@ -2,6 +2,7 @@ import type { MenuNode } from '@/types/access';
 
 /** `data` of POST /login (RegisterController::login). */
 export interface LoginResponseData {
+  expires_at?: string;
   token: string;
   /** Encrypted user id. */
   user_id: string;
@@ -45,6 +46,8 @@ export interface SessionStore {
 
 /** What the app persists in SecureStore. */
 export interface Session {
+  expiresAt?: string;
+  remember?: boolean;
   /** Time-boxed support context; the actor/token always remain the SuperAdmin. */
   supportAccess?: { tenantId: number; storeName: string; expiresAt: string };
   token: string;

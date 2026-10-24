@@ -259,7 +259,15 @@ export function OrderDetail({ id, onBack }: { id: string; onBack: () => void }) 
         )
       )
         throw new Error('Action non autorisée.');
-      if (kind === 'validate') return commerceApi.validateOrder(id);
+      if (kind === 'validate') {
+        const result = await commerceApi.validateOrder(id);
+        const saleId = record(result).id;
+        if (!saleId)
+          throw new Error(
+            'La conversion n’a pas renvoyé de vente. Actualisez la commande pour vérifier son état avant de réessayer.',
+          );
+        return result;
+      }
       if (kind === 'cancel') return commerceApi.write('delete', `/commande/delete/${id}`);
       return commerceApi.write('post', `/commande/return/${id}`, {
         items: (data?.items ?? [])
@@ -281,6 +289,7 @@ export function OrderDetail({ id, onBack }: { id: string; onBack: () => void }) 
         if (kind === 'validate' && nextId && can('sales.view')) setSale(String(nextId));
       }
     },
+    onError: () => setConfirm(undefined),
     retry: false,
   });
   async function document(email = false) {

@@ -87,12 +87,13 @@ const SaleCard = memo(function SaleCard({
   );
 });
 export function SalesScreen() {
-  const params = useLocalSearchParams<{ action?: string }>();
+  const params = useLocalSearchParams<{ action?: string; id?: string }>();
   const access = useAccess();
   const store = useSessionStore((state) => state.session?.activeStore?.id);
   return (
     <SalesWorkspace
-      key={`${store}-${params.action ?? ''}`}
+      key={`${store}-${params.action ?? ''}-${params.id ?? ''}`}
+      initialSale={params.id}
       createInitially={params.action === 'create'}
       access={access.data}
     />
@@ -101,9 +102,11 @@ export function SalesScreen() {
 function SalesWorkspace({
   createInitially,
   access,
+  initialSale,
 }: {
   createInitially: boolean;
   access: ReturnType<typeof useAccess>['data'];
+  initialSale?: string;
 }) {
   const store = useSessionStore((state) => state.session?.activeStore?.id);
   const qc = useQueryClient();
@@ -113,7 +116,7 @@ function SalesWorkspace({
   const [pickingPeriod, setPickingPeriod] = useState(false);
   const [filter, setFilter] = useState<PaymentFilter>('all');
   const [creating, setCreating] = useState(createInitially);
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(initialSale ?? '');
   const [completed, setCompleted] = useState<CompletedSale>();
   const [creditCustomer, setCreditCustomer] = useState<string>();
   const view = can(access, 'sales.view');

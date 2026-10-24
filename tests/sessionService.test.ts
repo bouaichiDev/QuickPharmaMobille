@@ -43,6 +43,20 @@ const checkData: CheckTokenData = {
 };
 
 describe('session restore', () => {
+  it('does not restore an expired remembered session even when the server is unreachable', async () => {
+    const storage = memoryStorage({ ...storedSession, remember: true, expiresAt: '2020-01-01T00:00:00Z' });
+    const checkToken = jest.fn();
+    await expect(createSessionService(storage, checkToken).restore()).resolves.toEqual({ status: 'anonymous' });
+    expect(checkToken).not.toHaveBeenCalled();
+    expect(storage.data.has(secureKeys.session)).toBe(false);
+  });
+  it('does not persist a session when stay signed in is unchecked', async () => {
+    const storage = memoryStorage(storedSession);
+    const service = createSessionService(storage, jest.fn());
+    await service.persist({ ...storedSession, remember: false });
+    expect(storage.data.has(secureKeys.session)).toBe(false);
+    await expect(service.restore()).resolves.toEqual({ status: 'anonymous' });
+  });
   it('is anonymous when nothing is stored', async () => {
     const service = createSessionService(memoryStorage(), jest.fn());
     await expect(service.restore()).resolves.toEqual({ status: 'anonymous' });

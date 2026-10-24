@@ -3,15 +3,10 @@
     "name": "QuickPharma",
     "slug": "quickpharma",
     "scheme": "quickpharma",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#f8f9ff"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.quickpharma.mobile"
@@ -37,10 +32,11 @@
       "expo-localization",
       "expo-font",
       "expo-iap",
+      "expo-sharing",
       [
         "expo-camera",
         {
-          "cameraPermission": "QuickPharma uses the camera to scan barcodes and take product photos.",
+          "cameraPermission": "QuickPharma utilise la caméra pour scanner les codes-barres et badges clients et prendre des photos de produits.",
           "recordAudioAndroid": false,
           "microphonePermission": false,
           "barcodeScannerEnabled": true
@@ -61,14 +57,6 @@
           "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#f8f9ff"
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "QuickPharma utilise la caméra pour scanner les badges clients.",
-          "microphonePermission": false,
-          "recordAudioAndroid": false
         }
       ]
     ],

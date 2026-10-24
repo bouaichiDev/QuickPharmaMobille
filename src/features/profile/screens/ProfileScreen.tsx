@@ -17,6 +17,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { spacing } from '@/theme';
 
 import { LanguageSetting } from '../components/LanguageSetting';
+import { AccountPrivacy } from '../components/AccountPrivacy';
+import { TwoFactorSettings } from '../components/TwoFactorSettings';
 import { LogoutSection } from '../components/LogoutSection';
 import { PermissionsSummary } from '../components/PermissionsSummary';
 import { ProfileCard } from '../components/ProfileCard';
@@ -75,6 +77,8 @@ export function ProfileScreen() {
         </Card>
       </View>
 
+      <AccountPrivacy />
+      <TwoFactorSettings />
       <LogoutSection />
 
       <AppText variant="bodySm" color="outline" align="center">

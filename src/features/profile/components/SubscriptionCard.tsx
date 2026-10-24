@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { quotaStateView } from '@/features/access/decisions';
 import { useAnyPermission, useCanManageSubscription } from '@/features/access/hooks';
-import { openWebApp } from '@/features/subscriptions/openWebApp';
+import { openWebApp, webAppAvailable } from '@/features/subscriptions/openWebApp';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { EffectiveAccess } from '@/types/access';
 import { colors, radii, spacing } from '@/theme';
@@ -85,7 +85,7 @@ export function SubscriptionCard({ access }: SubscriptionCardProps) {
         ) : null}
 
         <View style={styles.actions}>
-          {canManage && !isPlatform ? (
+          {canManage && !isPlatform && webAppAvailable ? (
             <Button label={t('mobile.profile.manageOnWeb')} icon="open-in-new" onPress={() => void openWebApp()} />
           ) : null}
           {canViewPlans && !isPlatform ? (

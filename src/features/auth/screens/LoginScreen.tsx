@@ -1,9 +1,9 @@
+import { useAccountTranslation } from '@/i18n/useAccountTranslation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, TextInput, View } from 'react-native';
-
 import { InlineNotice } from '@/components/feedback/InlineNotice';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +16,6 @@ import { preferenceKeys } from '@/constants/storageKeys';
 import { useTranslation } from '@/i18n/useTranslation';
 import { preferences } from '@/services/storage/preferences';
 import { colors, spacing } from '@/theme';
-
 import { AuthFooter } from '../components/AuthFooter';
 import { LanguagePill } from '../components/LanguagePill';
 import { loginErrorMessage } from '../authErrors';
@@ -24,33 +23,43 @@ import { loginSchema, type LoginFormValues } from '../schemas';
 import { useSessionStore } from '../sessionStore';
 import { useLogin } from '../useAuthMutations';
 import { useFieldError } from '../useFieldError';
-
 export function LoginScreen() {
+  const ta = useAccountTranslation();
   const translator = useTranslation();
   const { t } = translator;
   const router = useRouter();
   const login = useLogin();
+  const [otp, setOtp] = useState('');
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
   const fieldError = useFieldError();
   const passwordRef = useRef<TextInput>(null);
   const notice = useSessionStore((state) => state.notice);
   const clearNotice = useSessionStore((state) => state.clearNotice);
-
   const { control, handleSubmit, setValue, formState } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', remember: true },
   });
-
   useEffect(() => {
     void preferences.getString(preferenceKeys.rememberedEmail).then((email) => {
       if (email) setValue('email', email);
     });
   }, [setValue]);
-
   const onSubmit = handleSubmit((values) => {
     clearNotice();
-    login.mutate(values, { onSuccess: () => router.replace('/') });
+    login.mutate(
+      { ...values, otp: otp.trim() || undefined },
+      {
+        onSuccess: () => {
+          setOtp('');
+          login.reset();
+          router.replace('/');
+        },
+        onError: (error) => {
+          if (error.message === 'TWO_FACTOR_REQUIRED') setTwoFactorRequired(true);
+        },
+      },
+    );
   });
-
   return (
     <Screen keyboard edges={['top', 'bottom']} contentStyle={styles.content}>
       <LanguagePill />
@@ -63,7 +72,11 @@ export function LoginScreen() {
       </View>
 
       {notice === 'sessionExpired' ? (
-        <InlineNotice tone="warning" message={t('mobile.auth.sessionExpired')} onDismiss={clearNotice} />
+        <InlineNotice
+          tone="warning"
+          message={t('mobile.auth.sessionExpired')}
+          onDismiss={clearNotice}
+        />
       ) : null}
 
       <Card style={styles.card}>
@@ -77,7 +90,7 @@ export function LoginScreen() {
             </AppText>
           </View>
 
-          {login.isError ? (
+          {login.isError && login.error?.message !== 'TWO_FACTOR_REQUIRED' ? (
             <InlineNotice tone="danger" message={loginErrorMessage(login.error, translator)} />
           ) : null}
 
@@ -139,9 +152,27 @@ export function LoginScreen() {
             control={control}
             name="remember"
             render={({ field }) => (
-              <Checkbox checked={field.value} onChange={field.onChange} label={t('mobile.auth.rememberMe')} />
+              <Checkbox
+                checked={field.value}
+                onChange={field.onChange}
+                label={ta('account_security_stay_signed_in')}
+              />
             )}
           />
+
+          {twoFactorRequired && (
+            <>
+              <InlineNotice tone="info" message={ta('account_security_login_factor_hint')} />
+              <TextField
+                label={ta('account_security_verification_code')}
+                value={otp}
+                onChangeText={setOtp}
+                autoCapitalize="none"
+                autoComplete="one-time-code"
+                maxLength={64}
+              />
+            </>
+          )}
 
           <Button
             label={t('mobile.auth.submitLogin')}
@@ -168,7 +199,6 @@ export function LoginScreen() {
     </Screen>
   );
 }
-
 const styles = StyleSheet.create({
   content: {
     justifyContent: 'center',

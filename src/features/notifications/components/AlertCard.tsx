@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { AppText } from '@/components/ui/AppText';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
@@ -11,11 +12,24 @@ import { formatDateTime } from '@/utils/format';
 
 import type { AlertItem } from '../../dashboard/types';
 
-const PRIORITY_VISUALS: Record<string, { accent: ColorToken; tone: BadgeTone; iconBg: ColorToken; iconColor: ColorToken }> = {
+const PRIORITY_VISUALS: Record<
+  string,
+  { accent: ColorToken; tone: BadgeTone; iconBg: ColorToken; iconColor: ColorToken }
+> = {
   critical: { accent: 'error', tone: 'danger', iconBg: 'errorContainer', iconColor: 'error' },
   high: { accent: 'error', tone: 'danger', iconBg: 'errorContainer', iconColor: 'error' },
-  medium: { accent: 'warning', tone: 'warning', iconBg: 'warningContainer', iconColor: 'onWarningContainer' },
-  low: { accent: 'tertiary', tone: 'neutral', iconBg: 'surfaceContainerHigh', iconColor: 'tertiary' },
+  medium: {
+    accent: 'warning',
+    tone: 'warning',
+    iconBg: 'warningContainer',
+    iconColor: 'onWarningContainer',
+  },
+  low: {
+    accent: 'tertiary',
+    tone: 'neutral',
+    iconBg: 'surfaceContainerHigh',
+    iconColor: 'tertiary',
+  },
 };
 
 const TYPE_ICONS: Record<string, IconName> = {
@@ -46,7 +60,11 @@ export function AlertCard({ alert, onMarkRead }: AlertCardProps) {
     <Card accent={alert.is_read ? 'outlineVariant' : visual.accent}>
       <View style={styles.row}>
         <View style={[styles.iconBox, { backgroundColor: colors[visual.iconBg] }]}>
-          <Icon name={TYPE_ICONS[alert.type] ?? 'notifications'} size="md" color={visual.iconColor} />
+          <Icon
+            name={TYPE_ICONS[alert.type] ?? 'notifications'}
+            size="md"
+            color={visual.iconColor}
+          />
         </View>
         <View style={styles.body}>
           <View style={styles.meta}>
@@ -60,6 +78,21 @@ export function AlertCard({ alert, onMarkRead }: AlertCardProps) {
           <AppText variant="bodyMd" color="onSurfaceVariant">
             {alert.message}
           </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voir le détail de l’alerte"
+            onPress={() =>
+              router.push({
+                pathname: '/finance/[module]',
+                params: { module: 'alerts', id: alert.uid },
+              } as never)
+            }
+            style={{ minHeight: 44, justifyContent: 'center' }}
+          >
+            <AppText variant="labelMd" color="primary">
+              Voir le détail
+            </AppText>
+          </Pressable>
           <View style={styles.footer}>
             <AppText variant="labelSm" color="outline">
               {priorityLabel}

@@ -3,28 +3,28 @@ import { record, type CrmRecord } from '@/features/crm/crmApi';
 export type ReportKind = 'sales' | 'entries' | 'orders' | 'products';
 export const reportDefinitions = {
   sales: {
-    title: 'Ventes et encaissements',
+    title: 'Rapports de ventes',
     path: '/reportSales',
     rows: 'sales',
     status: 'sales',
     icon: 'point-of-sale',
   },
   entries: {
-    title: 'Achats et entrées de stock',
+    title: 'Rapports d’entrées',
     path: '/reportEntree',
     rows: 'entries',
     status: 'entrees',
     icon: 'move-to-inbox',
   },
   orders: {
-    title: 'Commandes clients',
+    title: 'Rapports de commandes',
     path: '/reportCommandes',
     rows: 'commandes',
     status: 'commandes',
     icon: 'shopping-cart',
   },
   products: {
-    title: 'Produits et mouvements de stock',
+    title: 'Rapports de produits',
     path: '/BilanDay',
     rows: 'data',
     status: '',
@@ -126,10 +126,10 @@ export function reportColumns(kind: ReportKind): [string, string][] {
     ? [
         ['sku', 'Référence'],
         ['productName', 'Produit'],
-        ['items_sold', 'Unités vendues'],
-        ['items_buy', 'Unités reçues'],
-        ['available_stock', 'Disponibles'],
-        ['reserved_stock', 'Réservées'],
+        ['items_sold', 'Articles vendus'],
+        ['items_buy', 'Articles achetés'],
+        ['available_stock', 'Stock disponible'],
+        ['reserved_stock', 'Stock réservé'],
       ]
     : [
         [

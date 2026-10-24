@@ -1,22 +1,23 @@
+import { useAccountTranslation } from '@/i18n/useAccountTranslation';
 import { Pressable, StyleSheet, View } from 'react-native';
-
+import { router, type Href } from 'expo-router';
+import { useSessionStore } from '@/features/auth/sessionStore';
+import { Button } from '@/components/ui/Button';
 import { AppText } from '@/components/ui/AppText';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colors, radii, spacing } from '@/theme';
-
 import type { NotificationItem } from '../types';
-
 interface NotificationCardProps {
   item: NotificationItem;
   onMarkRead: (id: number) => void;
 }
-
 export function NotificationCard({ item, onMarkRead }: NotificationCardProps) {
+  const ta = useAccountTranslation();
   const { t } = useTranslation();
   const unread = item.isRead === 0;
-
+  const platform = useSessionStore((s) => s.session?.role?.toLowerCase() === 'superadmin');
   return (
     <Card accent={unread ? 'primary' : 'outlineVariant'}>
       <View style={styles.row}>
@@ -25,7 +26,12 @@ export function NotificationCard({ item, onMarkRead }: NotificationCardProps) {
         </View>
         <View style={styles.body}>
           <View style={styles.meta}>
-            <AppText variant="labelSm" color="onSurfaceVariant" numberOfLines={1} style={styles.from}>
+            <AppText
+              variant="labelSm"
+              color="onSurfaceVariant"
+              numberOfLines={1}
+              style={styles.from}
+            >
               {item.from ?? ''}
             </AppText>
             {unread ? <View style={styles.unreadDot} accessibilityLabel="unread" /> : null}
@@ -34,6 +40,16 @@ export function NotificationCard({ item, onMarkRead }: NotificationCardProps) {
             </AppText>
           </View>
           <AppText variant="headlineSm">{item.title}</AppText>
+          {platform && item.title === 'Demande de suppression de compte' && (
+            <Button
+              label={ta('account_security_manage_request')}
+              variant="outline"
+              onPress={() => {
+                if (unread) onMarkRead(item.id);
+                router.push('/account-deletion-requests' as Href);
+              }}
+            />
+          )}
           <AppText variant="bodyMd" color="onSurfaceVariant">
             {item.content}
           </AppText>
@@ -55,7 +71,6 @@ export function NotificationCard({ item, onMarkRead }: NotificationCardProps) {
     </Card>
   );
 }
-
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',

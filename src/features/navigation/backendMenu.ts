@@ -13,6 +13,7 @@ export interface MobileMenuItem {
 export interface MobileMenuGroup {
   title: string;
   items: MobileMenuItem[];
+  parent?: boolean;
 }
 
 export function backendMenuGroups(
@@ -23,6 +24,30 @@ export function backendMenuGroups(
   const groups: MobileMenuGroup[] = [];
   function destination(route: string) {
     const path = (route.split(/[?#]/)[0] ?? '').replace(/\/$/, '');
+    const finance: Record<string, [string, IconName, string]> = {
+      '/alerts/dashboard': ['alerts-dashboard', 'notifications-active', 'self'],
+      '/alerts': ['alerts', 'notifications-none', 'self'],
+      '/smart-alerts': ['alerts-smart', 'notifications-active', 'self'],
+      '/cheques/alerts': ['cheques-alerts', 'event', 'payments.view'],
+      '/cheques/dashboard': ['cheques-dashboard', 'account-balance', 'payments.view'],
+      '/cheques': ['cheques', 'account-balance', 'payments.view'],
+      '/credits': ['credits', 'account-balance-wallet', 'credits.view'],
+      '/customer-credits': ['credits', 'account-balance-wallet', 'credits.view'],
+      '/credits-cheques': ['overview', 'account-balance-wallet', 'credits.view'],
+      '/credits-and-cheques': ['overview', 'account-balance-wallet', 'credits.view'],
+    };
+    if (finance[path]) {
+      const [module, icon, permission] = finance[path];
+      return {
+        href: `/finance/${module}`,
+        icon,
+        fallback: 'Finance & Suivi',
+        denied:
+          module === 'overview'
+            ? !can(access, 'credits.view') && !can(access, 'payments.view')
+            : permission !== 'self' && !can(access, permission),
+      };
+    }
     const platformPath =
       path === '/roles'
         ? '/superadmin/access/roles'
@@ -77,6 +102,15 @@ export function backendMenuGroups(
         denied: !can(access, 'platform.metrics.view'),
       };
     const pharmacy: Record<string, [string, IconName, string]> = {
+      '/invoices': ['/invoices', 'receipt-long', 'invoices.view'],
+      '/invoice-settings': ['/invoice-settings', 'tune', 'invoices.settings.manage'],
+      '/settings': ['/settings', 'settings', 'settings.view'],
+      '/users': ['/users', 'group', 'team.users.view'],
+      '/products/age-groups': ['/age-groups', 'people-alt', 'catalog.references.view'],
+      '/age-groups': ['/age-groups', 'people-alt', 'catalog.references.view'],
+      '/subscriptions': ['/subscriptions', 'workspace-premium', 'subscription.view'],
+      '/subscription-billings': ['/subscriptions', 'receipt', 'subscription.view'],
+      '/audit-logs': ['/audit-logs', 'history', 'audit.view'],
       '/suppliers': ['/suppliers', 'local-shipping', 'suppliers.view'],
       '/providers': ['/suppliers', 'local-shipping', 'suppliers.view'],
       '/orders': ['/orders', 'shopping-cart', 'orders.view'],
@@ -104,7 +138,18 @@ export function backendMenuGroups(
           href: target[0],
           icon: target[1],
           fallback:
-            target[0] === '/suppliers'
+            (
+              {
+                '/invoices': 'Factures',
+                '/invoice-settings': 'Paramètres de facturation',
+                '/settings': 'Paramètres',
+                '/users': 'Utilisateurs',
+                '/age-groups': 'Groupes d’âge',
+                '/subscriptions': 'Abonnements',
+                '/audit-logs': 'Journaux d’audit',
+              } as Record<string, string>
+            )[target[0]] ??
+            (target[0] === '/suppliers'
               ? 'Fournisseurs'
               : target[0] === '/orders'
                 ? 'Commandes'
@@ -120,7 +165,7 @@ export function backendMenuGroups(
                           ? 'Emplacements'
                           : target[0] === '/plans'
                             ? 'Abonnements'
-                            : 'Catégories',
+                            : 'Catégories'),
           denied:
             path === '/locations'
               ? !['products.view', 'stock.view', 'stock.locations.manage'].some((permission) =>
@@ -167,6 +212,17 @@ export function backendMenuGroups(
     Settings: 'Paramètres',
     Roles: 'Rôles',
     Invoices: 'Factures',
+    Subscriptions: 'Abonnements',
+    'Age Groups': 'Groupes d’âge',
+    'Invoice Settings': 'Paramètres de facturation',
+    'Alerts Dashboard': 'Tableau de bord des alertes',
+    Alerts: 'Alertes',
+    'Smart alerts': 'Alertes intelligentes',
+    'Cheque due dates': 'Échéances des chèques',
+    'Cheques dashboard': 'Tableau de bord des chèques',
+    Cheques: 'Chèques',
+    'Customer credits': 'Crédits clients',
+    'Credits & cheques': 'Crédits & chèques',
   };
   function labelFor(node: MenuNode, fallback?: string) {
     // The web uses header || label as the translation key for every role.
@@ -178,16 +234,39 @@ export function backendMenuGroups(
         (technical ? (fallback ?? key.replace(/^menu[.]/, '').replace(/[_-]/g, ' ')) : key),
     );
   }
-  function visit(nodes: MenuNode[], title: string) {
+  function visit(nodes: MenuNode[], title: string, parent = false) {
     for (const node of [...nodes].sort((a, b) => a.order - b.order)) {
       if (Number(node.hidden) === 1) continue;
       const heading = node.children?.length ? labelFor(node) : title;
-      const target = node.route ? destination(node.route) : undefined;
-      if (target || !node.children?.length) {
+      const financeAliases: Record<string, string> = {
+        alertsdashboard: '/alerts/dashboard',
+        tableaudeborddesalertes: '/alerts/dashboard',
+        alerts: '/alerts',
+        alertes: '/alerts',
+        smartalerts: '/smart-alerts',
+        alertesintelligentes: '/smart-alerts',
+        chequeduedates: '/cheques/alerts',
+        echeancesdescheques: '/cheques/alerts',
+        chequesdashboard: '/cheques/dashboard',
+        tableaudeborddescheques: '/cheques/dashboard',
+        cheques: '/cheques',
+        customercredits: '/credits',
+        creditsclients: '/credits',
+        creditscheques: '/credits-cheques',
+      };
+      const aliasKey = (node.header || node.label)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/gi, '')
+        .toLowerCase();
+      const target =
+        (node.route ? destination(node.route) : undefined) ??
+        (financeAliases[aliasKey] ? destination(financeAliases[aliasKey]!) : undefined);
+      if (!node.children?.length) {
         let group = groups.at(-1);
         if (group?.title !== heading) group = undefined;
         if (!group) {
-          group = { title: heading, items: [] };
+          group = { title: heading, items: [], ...(parent ? { parent: true } : {}) };
           groups.push(group);
         }
         if (
@@ -206,7 +285,7 @@ export function backendMenuGroups(
                 : {}),
           });
       }
-      visit(node.children ?? [], heading);
+      visit(node.children ?? [], heading, true);
     }
   }
   visit(menus, 'Modules');

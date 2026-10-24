@@ -20,7 +20,7 @@ import { spacing } from '@/theme';
 import { PlanComparisonTable } from '../components/PlanComparisonTable';
 import { PlanLimits, PlanPrice } from '../components/PlanCard';
 import { usePlans } from '../plansApi';
-import { openWebApp } from '../openWebApp';
+import { openWebApp, webAppAvailable } from '../openWebApp';
 
 export function PlanDetailScreen() {
   const { t } = useTranslation();
@@ -107,7 +107,7 @@ export function PlanDetailScreen() {
       ) : plan.isFree ? null : (
         <>
           <InlineNotice tone="info" message={t('mobile.plans.webOnly')} />
-          <Button label={t('mobile.plans.goToWeb')} icon="open-in-new" onPress={() => void openWebApp()} />
+          {webAppAvailable && <Button label={t('mobile.plans.goToWeb')} icon="open-in-new" onPress={() => void openWebApp()} />}
         </>
       )}
     </Screen>

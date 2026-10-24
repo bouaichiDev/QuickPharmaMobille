@@ -259,3 +259,73 @@ Limite : aucun serveur ni application demarre, conformement a la consigne utilis
 - Assistance : mutations et exports protégés ; la validation historique par GET est également bloquée en lecture seule.
 - Vérifications : tests automatisés avec API simulée ; aucun appel métier de création/modification à la production et aucun serveur démarré.
 - final result: blocked (visual QA only). Comparaison visuelle des nouveaux écrans et tests des sélecteurs natifs caméra/mail/impression non exécutés : respecter la consigne utilisateur de ne pas lancer l'application. Les maquettes constituent des références, pas une preuve du rendu final.
+
+## Rapports — reprise Stitch demandée le 22 octobre 2026
+
+- Cible : r1_hub_des_rapports_p_riodes, r2_rapport_ventes_encaissements_retours, r3_rapport_stock_valorisation_alertes et r4_centre_d_export_pr_paration_documentaire (screen.png et code.html), ainsi que les deux captures jointes par l'utilisateur.
+- Écart identifié : les grilles génériques s'empilaient sur téléphone, la période occupait une grande carte et le centre d'export était un simple dialogue.
+- Corrections : composants de rapports dédiés, rythme vertical de 12 px, périodes horizontales, carte de périmètre compacte, métrique principale pleine largeur et métriques secondaires en deux colonnes, familles en lignes avec icônes/chevrons, opérations condensées, évolution en colonnes et centre d'export dédié (périmètre, choix du rapport, PDF/CSV, sections réelles, action fixe). Repli en pleine largeur pour les grandes tailles de police.
+- En-tête partagé avec le logo de pharmacie et navigation existante préservés. Aucun actif raster nouveau requis : icônes Material et marque existante.
+- Données : quatre contrats API existants. Aucune valeur de démonstration, certification, valeur HT de stock, retours, répartition bancaire, fichier XLSX ou progression fictive ajouté. Les indicateurs du hub chargent uniquement une ligne par famille et utilisent les synthèses globales du serveur. Les filtres de statut sont réinitialisés lors du retour au hub/changement de famille.
+- Validation automatisée : 14 tests ciblés réussis, TypeScript sans erreur. Test ajouté : ouverture du centre d'export, sélection commandes clients + CSV et passage des filtres au générateur.
+- final result: blocked (visual verification). Les références Stitch et les captures utilisateur ont été ouvertes ; la nouvelle implémentation n'a pas été capturée sur un appareil. Aucun serveur/app démarré, conformément à la consigne existante. La fidélité à 100 % ne peut pas être attestée sans comparaison à viewport et état identiques. L'en-tête unifié et les quatre familles réelles constituent des différences explicites par rapport aux exemples Stitch.
+
+## Analytique des rapports — 22 octobre 2026
+
+- Noms alignés sur le web : Rapports de ventes, Rapports de produits, Rapports d’entrées, Rapports de commandes. Indicateurs Produits, Articles vendus, Articles achetés, Stock disponible/réservé, Payé et Dû, y compris colonnes exportées.
+- Meilleures ventes : classement et barres par nombre d'articles vendus, alimentés par topProducts de /BilanDay sur toute la période filtrée. Repli sur les lignes affichées si le serveur ne fournit pas ce classement ; périmètre indiqué dans la carte.
+- Taux d’encaissement ajouté aux ventes/entrées/commandes : même formule que TransactionAnalytics.tsx et shareOf du web (payé / montant total, arrondi entier), totaux globaux de l'API, anneau payé/dû et légende des montants. Aucun montant/période vide et données manquantes traités explicitement.
+- Aucun nouveau paquet, aucun serveur démarré et aucune mutation de production.
+- Tests ciblés : classement serveur versus page visible, cumul/repli, valeurs invalides, périodes vides, arrondi 62,5 vers 63 %, affichage des trois familles et export.
+- final result: blocked (comparaison visuelle sur téléphone non exécutée ; consigne de ne pas démarrer l'application préservée). Les captures utilisateur sont les références, pas une preuve du nouveau rendu.
+
+## Espace Admin — proposition 1, implémentation du 22 octobre 2026
+
+### Référence sélectionnée
+
+- Première planche de six pages métier, et non le premier menu généré : C:/Users/badz_/.codex/generated_images/01a11aee-7e9e-7ba0-8ae1-f34715bcdb22/exec-1454c2bd-6218-4431-a2c5-868353503576.png.
+- Interfaces : détail de facture, entreprise, utilisateur, groupes d’âge, abonnement et détail d’événement d’audit. Les listes et formulaires complémentaires reprennent les contrats du web/API.
+- Style : en-tête partagé existant et logo de la pharmacie réelle, fond clair, panneaux blancs arrondis 12 px, bleu #00417C, accents verts, sections repliables, formulaires lisibles et actions fixes. Réutilisation des icônes Material et du logo existant ; aucun nouvel actif raster nécessaire.
+
+### Implémentation et règles métier
+
+- Modules dans src/features/admin et routes /invoices, /invoice-settings, /settings, /users, /age-groups, /subscriptions, /audit-logs. Destinations du menu reliées selon les permissions. Le routage SuperAdmin existant reste distinct.
+- Facturation : liste paginée et filtres pris en charge ; détail et ventes liées, PDF serveur et pièce jointe via messagerie native ; création /invoices/manual ou /invoices/from-sales ; modification, ajout/retrait de ventes et clôture confirmée. Calcul d’aperçu conforme à InvoiceCalculationService, montants définitifs calculés par le serveur. Les factures clôturées restent en consultation.
+- Entreprise : données et logo, informations légales, devise/TVA, délai d’alerte, style, fidélité/paliers/conversion, règles de remise/arrondi. Enregistrement explicite avec conservation des autres champs et du logo tant qu’il n’est pas remplacé. Galerie et documents natifs chargés à la demande.
+- Utilisateurs : liste paginée, recherche/filtres, formulaire, statut, changement de mot de passe initial, rôles assignables par le compte, quotas et associations de magasins confirmées. Pas de routes SuperAdmin. L’ajout associe d’abord le magasin courant, comme l’API existante.
+- Groupes d’âge : liste, ajout/modification avec validation des bornes et suppression confirmée. Aucun conseil médical.
+- Abonnements : abonnement réel, quotas/features et historique des factures PDF ; choix/renouvellement via les plans et le système Google Play existants. Gestion Google Play disponible, annulation API protégée et confirmée pour les abonnements qui l’autorisent ; aucun paiement externe nouveau.
+- Audit : liste paginée, période/action, détail avant/après selon les véritables champs before/after ; compatibilité old_values/new_values ; valeurs sensibles masquées récursivement. Aucune mutation des traces. Pas de faux sélecteur d’auteur : l’API limite ce filtre à l’acteur authentifié.
+- Assistance : écritures et exports protégés selon les mêmes règles que le reste de l’application ; gestion des erreurs, requêtes annulables, pas de relance automatique des mutations.
+
+### Vérification
+
+- Suite complète : 59 suites / 462 tests réussis. TypeScript et ESLint passent.
+- Nouveaux tests : pagination/enveloppes, âges, création utilisateur sans mot de passe vide à l’édition, champs de tenant non envoyés, secrets d’audit, calculs de facture ; parcours simulés des six modules, création manuelle au bon endpoint, clôture confirmée et assistance.
+- Aucun serveur démarré ; aucune création/modification de données sur l’API de production.
+
+### Capture et accès à l’aperçu
+
+- Navigateur intégré ouvert sur http://localhost:8081/invoices ; redirection vers /login.
+- L’utilisateur a tenté de se connecter ; résultat visible : « Serveur injoignable ». Il confirme que le même compte fonctionne sur téléphone.
+- Configuration de l’app : API de production https://appsassbk.quickpharmaapp.com/api.
+- Diagnostic non authentifié : OPTIONS /api/login avec Origin http://localhost:8081 renvoie 204 sans Access-Control-Allow-Origin. La navigation GET /api/login est accessible et renvoie 405, ce qui confirme que ce n’est pas un refus des identifiants.
+- Correction locale : fallback CORS et .env.example incluent localhost/127.0.0.1:8081, sans wildcard ; une liste CORS_ALLOWED_ORIGINS explicite garde la priorité. Il faut ajouter l’origine à la configuration effective de production, conserver les autres origines puis rafraîchir le cache de configuration. Aucun déploiement distant effectué.
+- API factures : recherche par client corrigée de name vers FirstName/LastName. Syntaxe PHP valide ; patch local à déployer pour rendre cette recherche effective en production.
+
+### Comparaison visuelle
+
+- final result: blocked.
+- La source et l’écran de connexion ont été ouverts. Les pages métier authentifiées ne peuvent pas être capturées tant que CORS bloque la connexion web. La comparaison aux six panneaux de la source n’a donc pas été effectuée à viewport/état identiques ; aucune fidélité à 100 % déclarée.
+- À comparer après rétablissement de l’accès : typographies, rythmes de 12–16 px, champs/rangées, boutons fixes, listes à 360/390/430 px, grandes tailles de police, galerie/PDF/mail sur appareil. Les données illustratives, prix fictifs et logos générés de la planche ne remplacent pas les données/actifs réels.
+
+## Finance & Suivi — ensemble 2 — 23/10/2026
+
+- Source sélectionnée et ouverte : `C:/Users/badz_/.codex/generated_images/01a11aee-7e9e-7ba0-8ae1-f34715bcdb22/exec-8bd2e8af-419a-40a7-bc54-eb858d571b28.png`.
+- Implémentation dans l’application Expo existante : tableaux de bord/listes/détails d’alertes et chèques, échéances, formulaire de chèque avec photos et source, dossiers crédits/historique/encaissements, navigation depuis les notifications. Palette et structure de l’ensemble 2 ; logo connecté, icônes existantes et images réelles fournis par l’API. Aucun nouvel actif raster requis.
+- Les agrégats et transitions viennent des endpoints existants. Aucun pourcentage mensuel de crédit, statut ou montant illustratif n’a été fabriqué pour reproduire la maquette.
+- Tests des permissions en assistance, pagination serveur, sélection de source, dépôt confirmé, montant de crédit contrôlé et notifications isolées du magasin courant. Tests serveur avec SQLite en mémoire et transport HTTP simulé ; aucun push ni mutation métier en production.
+- final result: blocked.
+- Capture de l’implémentation non disponible : inventaire du navigateur intégré vide. Aucun serveur/app n’a été lancé, conformément à la préférence de l’utilisateur. La comparaison aux douze panneaux à viewport et état identiques reste à faire sur un aperçu authentifié ou sur téléphone.
+- Notifications distantes sur appareil également en attente : Firebase/FCM V1, fichier client, déploiement/migration/worker et reconstruction de l’APK. Le guide `docs/finance-mobile.md` détaille ces étapes. Aucun test de livraison réel ni fidélité visuelle à 100 % déclaré.
+- Vérification finale : TypeScript et ESLint sans erreur, 60 suites mobiles / 482 tests réussis ; 8 tests serveur / 21 assertions réussis dans SQLite en mémoire (envoi HTTP simulé), syntaxe PHP validée. Configuration Expo vérifiée : plugin présent et push désactivé tant que l’environnement ne l’active pas.

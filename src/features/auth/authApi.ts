@@ -12,10 +12,15 @@ import type {
 const publicRequest = { skipAuth: true, skipStoreContext: true } as const;
 
 export const authApi = {
-  async login(email: string, password: string): Promise<LoginResponseData> {
+  async login(
+    email: string,
+    password: string,
+    remember = true,
+    otp?: string,
+  ): Promise<LoginResponseData> {
     const body = await apiPost<SuccessEnvelope<LoginResponseData>>(
       endpoints.auth.login,
-      { email, password },
+      { email, password, remember, otp },
       publicRequest,
     );
     return body.data;

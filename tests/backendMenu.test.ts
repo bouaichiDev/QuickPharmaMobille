@@ -16,6 +16,29 @@ const menu = (overrides: Partial<MenuNode>): MenuNode => ({
   children: [],
   ...overrides,
 });
+it('maps finance menu aliases to business screens and preserves permission refusals', () => {
+  const nodes = [
+    menu({ id: 90, label: 'Alerts Dashboard', route: '/old-alert-dashboard' }),
+    menu({ id: 91, label: 'Smart alerts', route: '/legacy-smart' }),
+    menu({ id: 92, label: 'Cheque due dates', route: '/legacy-due' }),
+    menu({ id: 93, label: 'Customer credits', route: '/legacy-credit' }),
+  ];
+  const groups = backendMenuGroups(
+    makeAccess({ permissions: ['payments.view', 'credits.view'] }),
+    nodes,
+  );
+  expect(
+    groups.flatMap((group) => group.items).map((item) => [item.href, !!item.disabled]),
+  ).toEqual([
+    ['/finance/alerts-dashboard', false],
+    ['/finance/alerts-smart', false],
+    ['/finance/cheques-alerts', false],
+    ['/finance/credits', false],
+  ]);
+  expect(
+    backendMenuGroups(makeAccess({ permissions: [] }), [nodes[2]!])[0]?.items[0]?.disabled,
+  ).toBe(true);
+});
 describe('Plus menu from the effective backend tree', () => {
   it('uses web labels and keeps an unsupported platform container as a heading', () => {
     const groups = backendMenuGroups(
@@ -84,6 +107,7 @@ describe('Plus menu from the effective backend tree', () => {
     expect(groups).toEqual([
       {
         title: 'Cabinet',
+        parent: true,
         items: [
           { label: 'Mes patients', icon: 'group', href: '/crm/clients' },
           { label: 'Séances', icon: 'event-note', href: '/crm/sessions' },
