@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createBarcodeConsensus } from '@/utils/barcodeConsensus';
 import { AppState, Linking, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { AppText } from '@/components/ui/AppText';
@@ -7,6 +8,7 @@ export default function PosScannerCamera({ onRead }: { onRead: (code: string) =>
   const [permission, requestPermission] = useCameraPermissions();
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState('');
+  const accept = useRef(createBarcodeConsensus());
   const [active, setActive] = useState(AppState.currentState === 'active');
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (value) =>
@@ -52,12 +54,16 @@ export default function PosScannerCamera({ onRead }: { onRead: (code: string) =>
         <CameraView
           style={{ flex: 1 }}
           facing="back"
+          autofocus="on"
           enableTorch={flash}
           barcodeScannerSettings={{
             barcodeTypes: ['ean13', 'ean8', 'code128', 'qr', 'datamatrix'],
           }}
           onMountError={() => setError('La caméra ne peut pas démarrer.')}
-          onBarcodeScanned={({ data }) => onRead(data)}
+          onBarcodeScanned={(event) => {
+            const value = accept.current(event);
+            if (value) onRead(value);
+          }}
         />
       ) : null}
       <View

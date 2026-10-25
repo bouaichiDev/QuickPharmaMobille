@@ -13,6 +13,7 @@ import { printCrmDocument } from '@/features/crm/documents';
 import { productCode, type StockProduct } from './stockApi';
 import { useStockMutation, useStockScope } from './useStock';
 import { ProductPhoto } from './ProductPhoto';
+import { useStockScannerTranslation } from '@/i18n/useStockScannerTranslation';
 import { productInfo } from './stockPresentation';
 import {
   SBadge,
@@ -233,6 +234,7 @@ export function BarcodeFlow({
   canUpdate?: boolean;
   onScanned?: (code: string) => void;
 }) {
+  const tScan = useStockScannerTranslation();
   const preview = useContext(StockContext);
   const stockApi = useStockApi();
   const scope = useStockScope();
@@ -246,6 +248,10 @@ export function BarcodeFlow({
   const [replace, setReplace] = useState(false);
   const [error, setError] = useState<unknown>();
   const [reading, setReading] = useState(false);
+  const [scanAttempt, setScanAttempt] = useState(0);
+  const [cameraPaused, setCameraPaused] = useState(false);
+  const cameraPausedRef = useRef(false);
+  const [duplicateProduct, setDuplicateProduct] = useState<StockProduct>();
   const readLock = useRef(false);
   const query = useQuery({
     queryKey: ['catalogue', scope, 'associate', settled],
@@ -256,19 +262,22 @@ export function BarcodeFlow({
     if (!selected) throw new Error('Sélectionnez un produit.');
     return stockApi.barcode(selected.id, code, replace);
   });
-  async function read(value: string) {
-    if (readLock.current || !value.trim()) return;
+  async function read(value: string, fromCamera = false) {
+    if (readLock.current || (fromCamera && cameraPausedRef.current) || !value.trim()) return;
     readLock.current = true;
+    cameraPausedRef.current = true;
+    setCameraPaused(true);
     setCode(value.trim());
     setReading(true);
     setError(undefined);
+    setDuplicateProduct(undefined);
     try {
       if (onScanned) {
         onScanned(value.trim());
         return;
       }
       const result = await stockApi.lookup(value.trim());
-      if (result.product && target && result.product.id === target.id && !productCode(target)) {
+      if (result.product && target && result.product.id === target.id) {
         setPhase('associate');
         return;
       }
@@ -276,8 +285,10 @@ export function BarcodeFlow({
         onLinked(result.product);
         return;
       }
-      if (result.product)
-        throw new Error(`Ce code est déjà associé à ${result.product.productName}.`);
+      if (result.product) {
+        setDuplicateProduct(result.product);
+        return;
+      }
       setPhase(target ? 'associate' : 'unknown');
     } catch (e) {
       setError(e);
@@ -289,7 +300,7 @@ export function BarcodeFlow({
   async function confirm() {
     try {
       await link.mutateAsync(undefined);
-      if (selected) onLinked({ ...selected, barcode: code });
+      if (selected) onLinked({ ...selected, sku: code, barcode: code });
     } catch (e) {
       setError(e);
     }
@@ -297,7 +308,9 @@ export function BarcodeFlow({
   const existing = selected ? productCode(selected) : '';
   return (
     <StockPage
-      title={phase === 'associate' ? 'Associer un code-barres' : 'Scanner un produit'}
+      title={tScan(
+        phase === 'associate' ? 'stock_scanner_association_title' : 'stock_scanner_scan_title',
+      )}
       onClose={onClose}
       footer={
         phase === 'associate' ? (
@@ -309,7 +322,7 @@ export function BarcodeFlow({
               busy={link.isPending}
               disabled={
                 !selected ||
-                !canAssociateBarcode(selected) ||
+                (!canAssociateBarcode(selected) && selected.id !== target?.id) ||
                 (!!existing && existing !== code && !replace) ||
                 !canUpdate
               }
@@ -362,22 +375,50 @@ export function BarcodeFlow({
       ) : null}
       {phase === 'scan' ? (
         <>
-          <SBadge label="SCANNER ACTIF" tone="teal" />
+          <SBadge label={tScan('stock_scanner_scanner_active')} tone="teal" />
           {cameraAvailable ? (
-            <Suspense fallback={<AppText>Chargement de la caméra…</AppText>}>
-              <Camera onRead={(v) => void read(v)} />
+            <Suspense fallback={<AppText>{tScan('stock_scanner_loading_camera')}</AppText>}>
+              <Camera key={scanAttempt} paused={cameraPaused} onRead={(v) => void read(v, true)} />
             </Suspense>
           ) : (
             <SNote>Saisissez le code ci-dessous pour rechercher le produit.</SNote>
           )}
-          <SField label="Code-barres ou référence" value={code} onChange={setCode} />
+          <SField label={tScan('stock_scanner_code_label')} value={code} onChange={setCode} />
           <SButton
-            label="Rechercher ce code"
+            label={tScan('stock_scanner_search')}
             icon="search"
             onPress={() => void read(code)}
             busy={reading}
             disabled={!code.trim()}
           />
+          {cameraPaused && !reading ? (
+            <SButton
+              label={tScan('stock_scanner_rescan')}
+              secondary
+              icon="qr-code-scanner"
+              onPress={() => {
+                cameraPausedRef.current = false;
+                setCameraPaused(false);
+                setScanAttempt((attempt) => attempt + 1);
+                setCode('');
+                setError(undefined);
+                setDuplicateProduct(undefined);
+              }}
+            />
+          ) : null}
+          {duplicateProduct ? (
+            <View style={{ gap: 10 }}>
+              <SNote error>
+                {tScan('stock_scanner_duplicate', { product: duplicateProduct.productName })}
+              </SNote>
+              <SButton
+                secondary
+                label={tScan('stock_scanner_view_linked')}
+                icon="inventory-2"
+                onPress={() => onLinked(duplicateProduct)}
+              />
+            </View>
+          ) : null}
         </>
       ) : (
         <>
@@ -391,7 +432,7 @@ export function BarcodeFlow({
             </View>
           ) : null}
           <SCard tone={phase === 'associate' ? '#006a63' : undefined}>
-            <SBadge label="CODE SCANNÉ" />
+            <SBadge label={tScan('stock_scanner_scanned_code')} />
             <AppText variant="headlineMd" color={phase === 'associate' ? 'onPrimary' : 'onSurface'}>
               {code}
             </AppText>
@@ -400,6 +441,23 @@ export function BarcodeFlow({
               tone={phase === 'unknown' ? 'red' : 'teal'}
             />
           </SCard>
+          {phase === 'associate' ? (
+            <SButton
+              label={tScan('stock_scanner_rescan')}
+              icon="qr-code-scanner"
+              secondary
+              disabled={link.isPending}
+              onPress={() => {
+                cameraPausedRef.current = false;
+                setCameraPaused(false);
+                setCode('');
+                setError(undefined);
+                setDuplicateProduct(undefined);
+                setReplace(false);
+                setPhase('scan');
+              }}
+            />
+          ) : null}
           {phase === 'unknown' ? (
             <>
               <AppText variant="headlineMd">Ce code-barres n’est associé à aucun produit</AppText>
@@ -415,7 +473,7 @@ export function BarcodeFlow({
                 disabled={!canUpdate}
               />
               <SButton
-                label="Scanner un autre code"
+                label={tScan('stock_scanner_rescan')}
                 secondary
                 icon="qr-code-scanner"
                 onPress={() => setPhase('scan')}
@@ -454,7 +512,7 @@ export function BarcodeFlow({
               ) : null}
               <ScrollView style={{ maxHeight: 400 }}>
                 {(target ? [target] : query.data?.data || [])
-                  .filter(canAssociateBarcode)
+                  .filter((p) => canAssociateBarcode(p) || p.id === target?.id)
                   .map((p) => (
                     <Pressable
                       key={p.id}
@@ -514,10 +572,7 @@ export function BarcodeFlow({
                   </AppText>
                 </Pressable>
               ) : null}
-              <SNote>
-                Garantie traçabilité & dispensation : la référence du produit est conservée. Seul
-                son code-barres associé sera modifié.
-              </SNote>
+              <SNote>{tScan('stock_scanner_updates_sku')}</SNote>
               {selected ? (
                 <SCard>
                   <AppText variant="labelSm" color="outline">

@@ -11,6 +11,7 @@ export interface Product {
   id: number;
   productName: string;
   sku: string;
+  barcode?: string | null;
   categoryId: number;
   quantity: number | null;
   minQuantity: number | null;
@@ -136,6 +137,7 @@ function productFrom(value: unknown): Product | null {
     id,
     productName: raw.productName,
     sku: raw.sku,
+    barcode: typeof raw.barcode === 'string' ? raw.barcode : null,
     categoryId,
     quantity,
     minQuantity,

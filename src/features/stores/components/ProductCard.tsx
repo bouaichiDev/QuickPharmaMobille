@@ -27,13 +27,7 @@ interface ProductCardProps {
   };
 }
 
-export function ProductCard({
-  product,
-  categoryName,
-  currency,
-  locale,
-  labels,
-}: ProductCardProps) {
+export function ProductCard({ product, categoryName, currency, locale, labels }: ProductCardProps) {
   const quantity = product.quantity ?? 0;
   const minimum = product.minQuantity ?? 0;
   const lowStock = quantity <= minimum;
@@ -100,7 +94,9 @@ export function ProductCard({
 
         <View style={styles.footer}>
           <View style={styles.stockHint}>
-            <View style={[styles.dot, { backgroundColor: colors[lowStock ? 'warning' : 'success'] }]} />
+            <View
+              style={[styles.dot, { backgroundColor: colors[lowStock ? 'warning' : 'success'] }]}
+            />
             <AppText variant="bodySm" color={lowStock ? 'warning' : 'success'}>
               {lowStock ? labels.lowStock : labels.available}
             </AppText>

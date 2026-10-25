@@ -8,6 +8,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colors, radii, spacing } from '@/theme';
+import { createBarcodeConsensus } from '@/utils/barcodeConsensus';
 
 interface Props {
   onScan: (value: string) => void;
@@ -29,6 +30,7 @@ export function ProductBarcodeScanner({ onScan, onClose }: Props) {
     }, []),
   );
   const consumed = useRef(false);
+  const accept = useRef(createBarcodeConsensus());
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -43,8 +45,10 @@ export function ProductBarcodeScanner({ onScan, onClose }: Props) {
     onClose();
   }
 
-  function scan({ data }: BarcodeScanningResult) {
-    if (consumed.current || !active || !focused || !data.trim()) return;
+  function scan(event: BarcodeScanningResult) {
+    if (consumed.current || !active || !focused) return;
+    const data = accept.current(event);
+    if (!data) return;
     consumed.current = true;
     onScan(data.trim());
   }

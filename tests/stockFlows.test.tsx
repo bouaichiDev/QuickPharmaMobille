@@ -60,6 +60,18 @@ const product: StockProduct = {
   active: 1,
   hasExpiration: 0,
 };
+
+it('shows the stored SKU after association without a separate AMMPS reference', () => {
+  const screen = render(
+    <StockProductCard
+      product={{ ...product, sku: '6111245250939', barcode: '6111245250939' }}
+      onDetail={jest.fn()}
+      onBarcode={jest.fn()}
+    />,
+  );
+  expect(screen.getByText('CIP: 6111245250939')).toBeTruthy();
+  expect(screen.queryByText(/AMMPS-0042/)).toBeNull();
+});
 function setup(
   api: Partial<typeof stockApi>,
   props: Partial<React.ComponentProps<typeof BarcodeFlow>> = {},
@@ -118,9 +130,63 @@ it('associates an unknown code to the product explicitly selected by the user', 
   fireEvent.press(screen.getByLabelText('Confirmer l’association du code-barres'));
   await waitFor(() => expect(barcode).toHaveBeenCalledWith(7, '0012345678905', false));
   expect(screen.linked).toHaveBeenCalledWith(
-    expect.objectContaining({ sku: 'AMMPS-0042', barcode: '0012345678905' }),
+    expect.objectContaining({ sku: '0012345678905', barcode: '0012345678905' }),
   );
 });
+it('checks the code then associates to the explicitly selected product', async () => {
+  const lookup = jest.fn().mockResolvedValue({ product: null });
+  const barcode = jest.fn().mockResolvedValue({});
+  const screen = setup({ lookup, barcode }, { target: product });
+  fireEvent.changeText(screen.getByLabelText('Code-barres ou référence'), '6118000310624');
+  fireEvent.press(screen.getByLabelText('Rechercher ce code'));
+  await screen.findByLabelText('Confirmer l’association du code-barres');
+  expect(lookup).toHaveBeenCalledWith('6118000310624');
+  expect(barcode).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByLabelText('Confirmer l’association du code-barres'));
+  await waitFor(() => expect(barcode).toHaveBeenCalledWith(product.id, '6118000310624', false));
+  expect(screen.linked).toHaveBeenCalledWith(
+    expect.objectContaining({ id: product.id, barcode: '6118000310624' }),
+  );
+});
+
+it('blocks association when the code already belongs to another product', async () => {
+  const barcode = jest.fn();
+  const lookup = jest.fn().mockResolvedValue({
+    product: {
+      ...product,
+      id: 99,
+      productName: 'Produit déjà associé',
+      barcode: '6118000310624',
+    },
+  });
+  const screen = setup({ lookup, barcode }, { target: product });
+  fireEvent.changeText(screen.getByLabelText('Code-barres ou référence'), '6118000310624');
+  fireEvent.press(screen.getByLabelText('Rechercher ce code'));
+  await screen.findByText(
+    'Ce code-barres est déjà lié au produit « Produit déjà associé ». Vous ne pouvez pas l’associer à un autre produit.',
+  );
+  expect(screen.queryByLabelText('Confirmer l’association du code-barres')).toBeNull();
+  expect(barcode).not.toHaveBeenCalled();
+});
+
+it('can reconfirm an old association so the backend synchronizes the stored SKU', async () => {
+  const target = { ...product, barcode: '6111245250939' };
+  const barcode = jest
+    .fn()
+    .mockResolvedValue({ id: product.id, sku: target.barcode, barcode: target.barcode });
+  const screen = setup(
+    { lookup: jest.fn().mockResolvedValue({ product: target }), barcode },
+    { target },
+  );
+  fireEvent.changeText(screen.getByLabelText('Code-barres ou référence'), target.barcode);
+  fireEvent.press(screen.getByLabelText('Rechercher ce code'));
+  fireEvent.press(await screen.findByLabelText('Confirmer l’association du code-barres'));
+  await waitFor(() => expect(barcode).toHaveBeenCalledWith(product.id, target.barcode, false));
+  expect(screen.linked).toHaveBeenCalledWith(
+    expect.objectContaining({ sku: target.barcode, barcode: target.barcode }),
+  );
+});
+
 it('blocks editing when the role lacks update permission', () => {
   const barcode = jest.fn();
   const screen = setup(

@@ -1,4 +1,5 @@
 import { ProductInventory } from './ProductInventory';
+import { AmmpsOnboardingBanner } from './AmmpsOnboardingBanner';
 import { ProductPhoto } from './ProductPhoto';
 import { loadWebCatalogue } from './webCatalogue';
 import { ProductPrice } from './ProductPrice';
@@ -495,7 +496,16 @@ function ProductCatalogueContent() {
 
               renderItem={({ item }) => renderProduct(item)}
 
-              ListHeaderComponent={heading}
+              ListHeaderComponent={<View>
+                {heading}
+                {!preview && scope ? <AmmpsOnboardingBanner
+                  key={scope}
+                  scope={scope}
+                  allowed={allowed && can(access.data, 'products.create')}
+                  accessVersion={access.data?.access_version}
+                  onImported={() => { setPage(1); setSelected(undefined); }}
+                /> : null}
+              </View>}
 
               contentContainerStyle={{
                 paddingHorizontal: split ? 0 : 16,

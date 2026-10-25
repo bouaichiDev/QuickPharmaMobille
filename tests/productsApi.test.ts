@@ -200,12 +200,13 @@ describe('products API', () => {
     };
     get.mockResolvedValue({
       data: [
-        { ...product, QteAvailable: '3' },
+        { ...product, QteAvailable: '3', barcode: '6111245250939' },
         { ...product, id: 6, QteAvailable: 0, quantity: 9 },
       ],
       meta: { current_page: 1, last_page: 1, per_page: 15, total: 2 },
     });
     const result = await productsApi.list(1, {});
     expect(result.data.map((row) => row.quantity)).toEqual([3, 0]);
+    expect(result.data[0]?.barcode).toBe('6111245250939');
   });
 });

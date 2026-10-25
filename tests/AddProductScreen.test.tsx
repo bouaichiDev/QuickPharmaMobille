@@ -31,7 +31,10 @@ jest.mock('expo-router', () => ({
 jest.mock('@/features/access/useAccess', () => ({ useAccess: () => ({ data: undefined }) }));
 jest.mock('@/features/crm/modules', () => ({ can: jest.fn(() => true) }));
 jest.mock('@/features/catalogue/useStock', () => ({ useStockScope: () => 1 }));
-jest.mock('@/features/catalogue/stockApi', () => ({ stockApi: { detail: jest.fn() } }));
+jest.mock('@/features/catalogue/stockApi', () => ({
+  stockApi: { detail: jest.fn() },
+  productCode: jest.requireActual('@/features/catalogue/stockApi').productCode,
+}));
 jest.mock('@/features/catalogue/StockDesign', () => ({ SNote: 'Text' }));
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(() => ({ data: undefined })),
@@ -102,7 +105,9 @@ jest.mock('@/features/stores/components/ExpirationDateField', () => ({
 
 jest.setTimeout(30000);
 
-const key = (field: string) => `mobile.products.form.${field}`;
+const key = (field: string) => {
+  return `mobile.products.form.${field}`;
+};
 const post = jest.mocked(apiPost);
 function expectAlert(title: string, message: unknown) {
   expect(currentScreen.getByText(title)).toBeTruthy();
@@ -642,7 +647,7 @@ const editProduct = {
   active: 1,
   images: '["one.jpg",{"name":"two.jpg"}]',
 };
-function mockEditing(product = editProduct) {
+function mockEditing(product: typeof editProduct & { barcode?: string } = editProduct) {
   jest.mocked(useLocalSearchParams).mockReturnValue({ id: '7' });
   jest.mocked(useQuery).mockReturnValue({
     data: {
@@ -661,6 +666,21 @@ async function renderEdit() {
   });
   return result;
 }
+
+test('editing displays and saves the actual SKU updated by barcode association', async () => {
+  enableEditSubmission();
+  mockEditing({ ...editProduct, sku: '6111245250939', barcode: '6111245250939' });
+  const screen = render(<AddProductScreen />);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  });
+  expect(screen.getByLabelText(key('sku')).props.value).toBe('6111245250939');
+  expect(screen.queryByText('AMMPS-3806')).toBeNull();
+  await save(screen);
+  const body = jest.mocked(httpClient.post).mock.calls[0]![1] as FormData;
+  expect(body.get('sku')).toBe('6111245250939');
+  expect(body.has('barcode')).toBe(false);
+});
 test('loads every edit field, saved margin, price, photos and lot expiry', async () => {
   const screen = await renderEdit();
   for (const [field, value] of Object.entries({

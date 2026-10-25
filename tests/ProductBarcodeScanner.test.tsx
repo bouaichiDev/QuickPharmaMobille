@@ -28,6 +28,18 @@ jest.mock('@/i18n/useTranslation', () => ({
 const requestPermission = jest.fn();
 const getPermission = jest.fn();
 const camera = jest.mocked(CameraView);
+function stableFrames(
+  scan: NonNullable<React.ComponentProps<typeof CameraView>['onBarcodeScanned']>,
+  data: string,
+  type = 'code128',
+) {
+  const clock = jest.spyOn(Date, 'now');
+  for (const now of [1000, 1120, 1240]) {
+    clock.mockReturnValue(now);
+    scan({ data, type } as Parameters<typeof scan>[0]);
+  }
+  clock.mockRestore();
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -46,7 +58,7 @@ test('accepts one barcode and preserves leading zeroes', () => {
   render(<ProductBarcodeScanner onScan={onScan} onClose={jest.fn()} />);
   const scan = camera.mock.calls[0]![0]!.onBarcodeScanned!;
   act(() => {
-    scan({ data: ' 0012345678905 ' } as Parameters<typeof scan>[0]);
+    stableFrames(scan, ' 0012345678905 ', 'ean13');
     scan({ data: '9999999999999' } as Parameters<typeof scan>[0]);
   });
   expect(onScan).toHaveBeenCalledTimes(1);
@@ -86,7 +98,7 @@ test('ignores empty camera detections without consuming a later valid scan', () 
   const scan = camera.mock.calls[0]![0]!.onBarcodeScanned!;
   act(() => {
     scan({ data: '   ' } as Parameters<typeof scan>[0]);
-    scan({ data: 'QA-001' } as Parameters<typeof scan>[0]);
+    stableFrames(scan, 'QA-001');
   });
   expect(onScan).toHaveBeenCalledTimes(1);
   expect(onScan).toHaveBeenCalledWith('QA-001');
@@ -140,10 +152,10 @@ test('does not activate the camera while the app is backgrounded', () => {
 test('a reopened scanner accepts a new scan with a fresh duplicate lock', () => {
   const onScan = jest.fn();
   const first = render(<ProductBarcodeScanner onScan={onScan} onClose={jest.fn()} />);
-  act(() => camera.mock.calls[0]![0]!.onBarcodeScanned!({ data: 'QA-1' } as never));
+  act(() => stableFrames(camera.mock.calls[0]![0]!.onBarcodeScanned!, 'QA-1'));
   first.unmount();
   camera.mockClear();
   render(<ProductBarcodeScanner onScan={onScan} onClose={jest.fn()} />);
-  act(() => camera.mock.calls[0]![0]!.onBarcodeScanned!({ data: 'QA-2' } as never));
+  act(() => stableFrames(camera.mock.calls[0]![0]!.onBarcodeScanned!, 'QA-2'));
   expect(onScan.mock.calls).toEqual([['QA-1'], ['QA-2']]);
 });

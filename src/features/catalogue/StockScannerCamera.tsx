@@ -1,20 +1,29 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { createBarcodeConsensus } from '@/utils/barcodeConsensus';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Linking, Pressable, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { SButton, SNote, ScannerGuide } from './StockDesign';
 import { Icon } from '@/components/ui/Icon';
-export default function StockScannerCamera({ onRead }: { onRead: (value: string) => void }) {
+import { useStockScannerTranslation } from '@/i18n/useStockScannerTranslation';
+export default function StockScannerCamera({
+  onRead,
+  paused = false,
+}: {
+  onRead: (value: string) => void;
+  paused?: boolean;
+}) {
+  const tScan = useStockScannerTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [torch, setTorch] = useState(false);
   const [error, setError] = useState('');
+  const accept = useRef(createBarcodeConsensus());
   async function request() {
     try {
       const result = await requestPermission();
-      if (!result.granted)
-        setError('La caméra n’est pas autorisée. Vous pouvez saisir le code manuellement.');
+      if (!result.granted) setError(tScan('stock_scanner_permission_denied'));
     } catch {
-      setError('La caméra est indisponible. Saisissez le code manuellement.');
+      setError(tScan('stock_scanner_unavailable'));
     }
   }
   return permission?.granted ? (
@@ -25,6 +34,7 @@ export default function StockScannerCamera({ onRead }: { onRead: (value: string)
         <CameraView
           style={{ flex: 1 }}
           facing="back"
+          autofocus="on"
           enableTorch={torch}
           barcodeScannerSettings={{
             barcodeTypes: [
@@ -38,15 +48,20 @@ export default function StockScannerCamera({ onRead }: { onRead: (value: string)
               'qr',
             ],
           }}
-          onBarcodeScanned={({ data }) => onRead(data)}
-          onMountError={() =>
-            setError('La caméra ne peut pas démarrer. Utilisez la saisie manuelle.')
+          onBarcodeScanned={
+            paused
+              ? undefined
+              : (event) => {
+                  const value = accept.current(event);
+                  if (value) onRead(value);
+                }
           }
+          onMountError={() => setError(tScan('stock_scanner_startup_error'))}
         />
         <ScannerGuide />
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={torch ? 'Éteindre le flash' : 'Allumer le flash'}
+          accessibilityLabel={tScan(torch ? 'stock_scanner_flash_off' : 'stock_scanner_flash_on')}
           onPress={() => setTorch((v) => !v)}
           style={{
             position: 'absolute',
@@ -75,7 +90,7 @@ export default function StockScannerCamera({ onRead }: { onRead: (value: string)
           }}
         >
           <AppText variant="bodySm" color="onPrimary" align="center">
-            Alignez le code-barres dans le cadre.
+            {tScan(paused ? 'stock_scanner_paused' : 'stock_scanner_hold')}
           </AppText>
         </View>
       </View>
@@ -83,13 +98,11 @@ export default function StockScannerCamera({ onRead }: { onRead: (value: string)
     </View>
   ) : (
     <View style={{ gap: 12 }}>
-      <SNote>
-        Autorisez la caméra pour scanner un produit. La saisie manuelle reste disponible.
-      </SNote>
+      <SNote>{tScan('stock_scanner_permission_intro')}</SNote>
       <SButton
-        label={
-          permission?.canAskAgain === false ? 'Ouvrir les paramètres caméra' : 'Autoriser la caméra'
-        }
+        label={tScan(
+          permission?.canAskAgain === false ? 'stock_scanner_settings' : 'stock_scanner_allow',
+        )}
         icon="camera-alt"
         onPress={() =>
           permission?.canAskAgain === false ? void Linking.openSettings() : void request()
